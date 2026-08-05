@@ -1,0 +1,715 @@
+/* ================================================================
+   SALUD FINANCIERA — NEW FEATURES CSS
+   Estilos para las funcionalidades añadidas:
+   - Splash screen / onboarding interactivo
+   - Modal de login simulado (perfil)
+   - Página "Acerca de"
+   - Skeletons de carga
+   - Microinteracciones y animaciones nuevas
+   - Banner PWA "Instalar app"
+   ================================================================ */
+
+/* ============================================================
+   SPLASH SCREEN — Aparece la primera vez
+   ============================================================ */
+.splash-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(135deg, #0b3d2e 0%, #178566 100%);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; padding: 2rem;
+  animation: splashFadeIn .4s ease both;
+}
+.splash-overlay.hiding { animation: splashFadeOut .5s ease forwards; }
+@keyframes splashFadeIn  { from { opacity:0 } to { opacity:1 } }
+@keyframes splashFadeOut { to { opacity:0; visibility:hidden } }
+
+.splash-logo {
+  width: 90px; height: 90px;
+  background: #fff;
+  border-radius: 22px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 48px; margin-bottom: 1.5rem;
+  box-shadow: 0 12px 36px rgba(0,0,0,.25);
+  animation: splashBounce 1s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes splashBounce {
+  0%   { transform: scale(0) rotate(-30deg); opacity:0 }
+  100% { transform: scale(1) rotate(0); opacity:1 }
+}
+
+.splash-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 36px; font-weight: 800;
+  color: #fff; letter-spacing: -1px;
+  text-align: center; margin-bottom: .5rem;
+  animation: splashSlideUp .6s ease .2s both;
+}
+.splash-sub {
+  font-size: 15px; color: rgba(255,255,255,.75);
+  text-align: center; max-width: 320px;
+  margin-bottom: 2rem;
+  animation: splashSlideUp .6s ease .35s both;
+}
+@keyframes splashSlideUp {
+  from { opacity:0; transform: translateY(20px) }
+  to   { opacity:1; transform: translateY(0) }
+}
+
+/* Onboarding tour cards */
+.onboard-card {
+  background: #fff; border-radius: 20px;
+  padding: 1.75rem 1.75rem 1.25rem;
+  max-width: 380px; width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  animation: onboardIn .4s ease both;
+}
+@keyframes onboardIn {
+  from { opacity:0; transform: scale(.92) }
+  to   { opacity:1; transform: scale(1) }
+}
+.onboard-emoji {
+  font-size: 56px; text-align: center;
+  margin-bottom: 1rem;
+}
+.onboard-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 20px; font-weight: 700;
+  text-align: center; color: #0b3d2e;
+  margin-bottom: .5rem;
+}
+.onboard-text {
+  font-size: 14px; color: #4a5e57;
+  text-align: center; line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+.onboard-dots {
+  display: flex; justify-content: center; gap: 8px;
+  margin-bottom: 1.25rem;
+}
+.onboard-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #d8f7ed; transition: all .25s;
+}
+.onboard-dot.active {
+  background: #1da077; width: 24px; border-radius: 4px;
+}
+.onboard-actions {
+  display: flex; justify-content: space-between;
+  align-items: center; gap: .75rem;
+}
+.onboard-skip {
+  background: none; border: none;
+  color: #7a9490; font-size: 13px; font-weight: 600;
+  cursor: pointer; padding: 8px 12px;
+  border-radius: 8px; transition: background .15s;
+}
+.onboard-skip:hover { background: #f0fdf8; color: #0f5240; }
+.onboard-next {
+  background: #1da077; color: #fff;
+  border: none; border-radius: 10px;
+  padding: 10px 24px; font-weight: 700;
+  font-size: 14px; cursor: pointer;
+  transition: all .2s;
+  box-shadow: 0 4px 12px rgba(29,160,119,.3);
+}
+.onboard-next:hover {
+  background: #0f5240; transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(29,160,119,.4);
+}
+
+/* ============================================================
+   LOGIN / PROFILE — Modal de perfil simulado
+   ============================================================ */
+.profile-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,.25);
+  background: linear-gradient(135deg, #1da077 0%, #178566 100%);
+  color: #fff; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  transition: all .2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+.profile-btn:hover { transform: scale(1.06); box-shadow: 0 4px 10px rgba(0,0,0,.25); }
+.profile-btn.empty { background: rgba(255,255,255,.1); }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(11, 61, 46, 0.5);
+  backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center;
+  padding: 1rem;
+  animation: modalBack .25s ease both;
+}
+.modal-backdrop.open { display: flex; }
+@keyframes modalBack { from {opacity:0} to {opacity:1} }
+
+.modal-card {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 2rem;
+  max-width: 420px; width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  animation: modalIn .3s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes modalIn {
+  from { opacity:0; transform: scale(.9) translateY(20px) }
+  to   { opacity:1; transform: scale(1) translateY(0) }
+}
+.modal-header {
+  display: flex; align-items: center; gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.modal-avatar-big {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, #1da077 0%, #178566 100%);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-family: 'Sora', sans-serif;
+  font-size: 26px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+.modal-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 19px; font-weight: 700;
+  color: var(--ink);
+}
+.modal-sub {
+  font-size: 13px; color: var(--muted);
+  margin-top: 2px;
+}
+.modal-close {
+  margin-left: auto;
+  background: none; border: none;
+  color: var(--muted); font-size: 22px;
+  cursor: pointer; padding: 4px 8px;
+  border-radius: 8px; transition: background .15s;
+}
+.modal-close:hover { background: var(--bg-2); color: var(--ink); }
+
+.modal-actions {
+  display: flex; gap: .75rem;
+  margin-top: 1.5rem;
+}
+.modal-actions .btn { flex: 1; }
+
+/* ============================================================
+   "ACERCA DE" — Página About / Equipo
+   ============================================================ */
+.about-hero {
+  background: linear-gradient(135deg, #0b3d2e 0%, #178566 100%);
+  border-radius: 24px; padding: 2.5rem 2rem;
+  color: #fff; margin-bottom: 2rem;
+  text-align: center; position: relative; overflow: hidden;
+}
+.about-hero::before {
+  content: ''; position: absolute;
+  right: -50px; top: -50px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.05);
+}
+.about-hero::after {
+  content: ''; position: absolute;
+  left: -30px; bottom: -60px;
+  width: 150px; height: 150px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.05);
+}
+.about-hero h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: 34px; font-weight: 800;
+  letter-spacing: -1px; margin-bottom: .75rem;
+  position: relative;
+}
+.about-hero p {
+  font-size: 15px; opacity: .85;
+  max-width: 480px; margin: 0 auto;
+  line-height: 1.6; position: relative;
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+.team-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px; padding: 1.75rem 1.25rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: all .25s;
+}
+.team-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--green-300);
+}
+.team-avatar {
+  width: 72px; height: 72px; border-radius: 50%;
+  margin: 0 auto 1rem;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Sora', sans-serif;
+  font-size: 28px; font-weight: 700;
+  color: #fff; letter-spacing: -.5px;
+}
+.team-avatar.green  { background: linear-gradient(135deg, #1da077, #0f5240); }
+.team-avatar.blue   { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.team-avatar.amber  { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.team-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 16px; font-weight: 700;
+  color: var(--ink); margin-bottom: 4px;
+}
+.team-role {
+  font-size: 12.5px; color: var(--green-600);
+  font-weight: 600; margin-bottom: .75rem;
+}
+.team-desc {
+  font-size: 12.5px; color: var(--muted);
+  line-height: 1.55;
+}
+
+.about-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem; margin-bottom: 2rem;
+}
+.about-stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px; padding: 1.25rem 1rem;
+  text-align: center;
+}
+.about-stat-num {
+  font-family: 'Sora', sans-serif;
+  font-size: 28px; font-weight: 800;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, #1da077, #0f5240);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.about-stat-lbl {
+  font-size: 11.5px; font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase; letter-spacing: .4px;
+  margin-top: 2px;
+}
+
+.qr-section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px; padding: 2rem;
+  display: flex; align-items: center; gap: 2rem;
+  margin-bottom: 2rem;
+}
+.qr-box {
+  width: 160px; height: 160px;
+  background: #fff;
+  border: 8px solid #0b3d2e;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  padding: 8px;
+}
+.qr-text { flex: 1; }
+.qr-text h3 {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px; font-weight: 700;
+  color: var(--ink); margin-bottom: .5rem;
+}
+.qr-text p {
+  font-size: 13.5px; color: var(--muted);
+  line-height: 1.6;
+}
+
+.tech-stack {
+  display: flex; flex-wrap: wrap;
+  gap: .5rem; justify-content: center;
+  margin-top: 1rem;
+}
+.tech-chip {
+  background: var(--green-50);
+  border: 1px solid var(--green-200);
+  border-radius: 99px;
+  padding: 5px 14px;
+  font-size: 12px; font-weight: 600;
+  color: var(--green-700);
+}
+
+/* ============================================================
+   SKELETON LOADERS — micro UX
+   ============================================================ */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-2) 0%, var(--line) 50%, var(--bg-2) 100%);
+  background-size: 200% 100%;
+  animation: skeletonSlide 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+@keyframes skeletonSlide {
+  0%   { background-position: 200% 0 }
+  100% { background-position: -200% 0 }
+}
+.skeleton-line { height: 14px; margin: 6px 0; }
+.skeleton-line.short { width: 60% }
+
+/* ============================================================
+   BANNER PWA "Instalar como app"
+   ============================================================ */
+.pwa-banner {
+  position: fixed; bottom: 16px; left: 16px; right: 16px;
+  max-width: 480px; margin: 0 auto;
+  background: linear-gradient(135deg, #0b3d2e 0%, #178566 100%);
+  color: #fff;
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  display: none;
+  align-items: center; gap: 1rem;
+  z-index: 400;
+  box-shadow: 0 12px 36px rgba(0,0,0,.3);
+  animation: pwaSlideUp .5s cubic-bezier(.34,1.56,.64,1) both;
+}
+.pwa-banner.show { display: flex; }
+@keyframes pwaSlideUp {
+  from { transform: translateY(120%); opacity:0 }
+  to   { transform: translateY(0); opacity:1 }
+}
+.pwa-banner-icon {
+  font-size: 28px; flex-shrink: 0;
+}
+.pwa-banner-text { flex: 1; min-width: 0; }
+.pwa-banner-title {
+  font-weight: 700; font-size: 14px;
+}
+.pwa-banner-sub {
+  font-size: 12px; opacity: .8; margin-top: 2px;
+}
+.pwa-banner-actions {
+  display: flex; gap: .5rem; flex-shrink: 0;
+}
+.pwa-btn {
+  background: #fff; color: #0b3d2e;
+  border: none; border-radius: 8px;
+  padding: 7px 14px; font-weight: 700;
+  font-size: 12px; cursor: pointer;
+  transition: transform .15s;
+}
+.pwa-btn:hover { transform: scale(1.05); }
+.pwa-btn.ghost {
+  background: rgba(255,255,255,.15);
+  color: #fff;
+}
+
+/* ============================================================
+   MICROINTERACCIONES — Botón share, ripples
+   ============================================================ */
+.btn-share {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #fff; border: none;
+  border-radius: 8px; padding: 8px 16px;
+  font-weight: 600; font-size: 13px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all .2s;
+  box-shadow: 0 2px 6px rgba(59,130,246,.3);
+}
+.btn-share:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(59,130,246,.4);
+}
+.btn-share:active { transform: translateY(0); }
+
+/* Tooltip al copiar */
+.copy-toast {
+  position: fixed; bottom: 30px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #0b3d2e; color: #fff;
+  padding: 10px 20px; border-radius: 99px;
+  font-size: 13px; font-weight: 600;
+  z-index: 600; opacity: 0;
+  transition: all .4s cubic-bezier(.34,1.56,.64,1);
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+}
+.copy-toast.show {
+  opacity: 1; transform: translateX(-50%) translateY(0);
+}
+
+/* ============================================================
+   PRESENTATION MODE — Para defensa
+   ============================================================ */
+.demo-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700;
+  background: #fef3c7; color: #92400e;
+  padding: 2px 8px; border-radius: 99px;
+  border: 1px solid #f59e0b;
+  margin-left: 8px;
+  text-transform: uppercase; letter-spacing: .5px;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-width:960px){
+  .team-grid { grid-template-columns: 1fr 1fr; }
+  .about-stats { grid-template-columns: 1fr 1fr; }
+  .qr-section { flex-direction: column; text-align: center; }
+}
+@media(max-width:680px){
+  .team-grid { grid-template-columns: 1fr; }
+  .about-hero { padding: 2rem 1.25rem; }
+  .about-hero h1 { font-size: 26px; }
+  .splash-title { font-size: 28px; }
+  .modal-card { padding: 1.5rem; }
+}
+
+/* ============================================================
+   DARK MODE OVERRIDES
+   ============================================================ */
+body.dark .onboard-card  { background: var(--surface); }
+body.dark .onboard-title { color: var(--green-300); }
+body.dark .onboard-text  { color: var(--ink-3); }
+body.dark .onboard-skip:hover { background: var(--bg-2); color: var(--ink-2); }
+body.dark .team-card     { background: var(--surface); border-color: var(--line); }
+body.dark .about-stat    { background: var(--surface); border-color: var(--line); }
+body.dark .qr-section    { background: var(--surface); border-color: var(--line); }
+body.dark .tech-chip     { background: var(--green-50); border-color: var(--green-200); color: var(--green-300); }
+body.dark .demo-pill     { background: #2a1c00; color: #fbbf24; border-color: #d97706; }
+
+/* ============================================================
+   MEJORA 4: CALCULADORAS — formato miles, hints, copiar
+   ============================================================ */
+.fmt-preview {
+  font-size: 12px; font-weight: 700; letter-spacing: -.3px;
+  font-family: var(--ff-head); color: var(--green-600);
+  margin-top: 3px; min-height: 16px;
+}
+body.dark .fmt-preview { color: var(--green-400); }
+
+.calc-empty-hint {
+  font-size: 12.5px; color: var(--muted); line-height: 1.5;
+  padding: 7px 10px; border-radius: var(--r-sm);
+  background: var(--bg-2); border: 1px solid var(--line);
+  margin-top: 5px;
+}
+
+.calc-copy-btn {
+  display: block; width: 100%;
+  margin-top: .6rem; font-size: 12.5px;
+}
+
+.calc-explanation {
+  font-size: 12.5px; color: var(--ink-3); line-height: 1.55;
+  margin-top: .6rem; padding: 8px 12px;
+  background: var(--bg-2); border-radius: var(--r-sm);
+  border-left: 3px solid var(--green-300);
+}
+body.dark .calc-explanation { background: var(--green-50); border-left-color: var(--green-400); }
+.calc-explanation strong { color: var(--ink-2); }
+
+/* ============================================================
+   MEJORA 5: WOW EXTRAS
+   ============================================================ */
+
+/* ── Tour guiado ── */
+.btn-tour {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .45rem .9rem; border-radius: var(--r-sm); border: 1.5px solid var(--green-300);
+  background: transparent; color: var(--green-700); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: background .18s, color .18s;
+}
+.btn-tour:hover { background: var(--green-50); color: var(--green-800); }
+body.dark .btn-tour { color: var(--green-400); border-color: var(--green-600); }
+body.dark .btn-tour:hover { background: rgba(74,222,128,.08); }
+
+.tour-overlay {
+  position: fixed; inset: 0; z-index: 900;
+  background: rgba(0,0,0,.55);
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s;
+}
+.tour-overlay.active { opacity: 1; pointer-events: auto; }
+
+.tour-highlight {
+  position: relative; z-index: 910;
+  outline: 3px solid var(--green-400);
+  outline-offset: 4px;
+  border-radius: 8px;
+  box-shadow: 0 0 0 6px rgba(74,222,128,.2), 0 0 30px rgba(74,222,128,.35);
+  animation: tourPulse 1.5s ease-in-out infinite;
+}
+@keyframes tourPulse {
+  0%, 100% { box-shadow: 0 0 0 6px rgba(74,222,128,.2), 0 0 30px rgba(74,222,128,.35); }
+  50%       { box-shadow: 0 0 0 10px rgba(74,222,128,.08), 0 0 40px rgba(74,222,128,.5); }
+}
+
+.tour-tooltip {
+  position: fixed; z-index: 920;
+  background: var(--bg-card, #fff); color: var(--ink-1, #0f1a15);
+  border-radius: 14px; padding: 1rem 1.1rem;
+  box-shadow: 0 8px 40px rgba(0,0,0,.28);
+  border: 1.5px solid var(--green-200, #bbf7d0);
+  transition: top .25s cubic-bezier(.4,0,.2,1), left .25s cubic-bezier(.4,0,.2,1);
+}
+
+.tour-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: .5rem;
+}
+.tour-counter {
+  font-size: 11px; font-weight: 700; color: var(--green-500);
+  letter-spacing: .05em; text-transform: uppercase;
+}
+.tour-close {
+  background: none; border: none; cursor: pointer;
+  font-size: 14px; color: var(--muted); padding: 0 2px; line-height: 1;
+}
+.tour-close:hover { color: var(--ink-1); }
+
+.tour-title {
+  font-size: 15px; font-weight: 700; margin-bottom: .4rem;
+  font-family: var(--ff-head); color: var(--ink-1);
+}
+.tour-desc {
+  font-size: 13px; color: var(--ink-3); line-height: 1.55; margin-bottom: .8rem;
+}
+.tour-actions {
+  display: flex; gap: .5rem; justify-content: flex-end;
+}
+
+/* ── Acerca de: count-up ── */
+.about-stat-num {
+  transition: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Presentation mode ── */
+.pres-badge {
+  position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%) translateY(100px);
+  z-index: 800; background: var(--green-700); color: #fff;
+  padding: .55rem 1.2rem; border-radius: 999px;
+  font-size: 13px; font-weight: 600; white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+  transition: transform .35s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+}
+.pres-badge kbd {
+  background: rgba(255,255,255,.2); border-radius: 4px;
+  padding: 1px 5px; font-size: 12px; font-family: monospace;
+}
+.pres-badge.visible { transform: translateX(-50%) translateY(0); }
+
+body.presentation .welcome-sub { display: none; }
+body.presentation .ssot-badge  { display: none; }
+body.presentation .about-hero p { display: none; }
+
+/* ============================================================
+   SIMULADOR DE DEUDAS + COMPARADOR DE OFERTAS
+   ============================================================ */
+
+/* Header compartido de ambas herramientas */
+.sim-tool-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-bottom: 1rem;
+}
+
+/* Tabla de deudas */
+.debt-tbl { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
+.debt-tbl th {
+  text-align: left; padding: 6px 8px;
+  font-size: 10.5px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .5px;
+  border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+.debt-tbl td { padding: 5px 6px; border-bottom: 1px solid var(--line); }
+
+/* Tarjeta de estrategia */
+.debt-strat-card {
+  background: var(--bg); border-radius: var(--r-md);
+  padding: 1.1rem 1rem; border: 2px solid;
+  text-align: center;
+}
+.debt-strat-title {
+  font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px;
+  margin-bottom: .3rem;
+}
+.debt-strat-sub { font-size: 11px; color: var(--muted); margin-bottom: .6rem; }
+.debt-strat-num {
+  font-family: var(--ff-head); font-size: 44px;
+  font-weight: 800; letter-spacing: -2px;
+  color: var(--ink); line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tarjeta de oferta (formulario) */
+.oferta-form-card {
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: var(--r-md); padding: 1rem;
+}
+.oferta-form-hdr {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: .75rem;
+}
+.oferta-pill {
+  font-size: 12px; font-weight: 700;
+  color: var(--green-700);
+  background: rgba(74,222,128,.1);
+  border: 1px solid var(--green-200);
+  border-radius: 999px; padding: 3px 10px;
+}
+body.dark .oferta-pill { color: var(--green-300); border-color: var(--green-700); background: rgba(74,222,128,.07); }
+.oferta-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: .6rem;
+}
+
+/* Tabla comparativa de ofertas */
+.oferta-cmp-tbl {
+  width: 100%; border-collapse: collapse;
+  font-size: 12.5px; min-width: 720px;
+}
+.oferta-cmp-tbl th {
+  padding: 7px 6px; font-size: 10.5px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .5px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap; text-align: center;
+}
+.oferta-cmp-tbl td { padding: 8px 6px; text-align: center; border-bottom: 1px solid var(--line); }
+.oferta-cmp-tbl tr:hover { background: var(--bg-2); }
+
+/* Tasas referenciales */
+.tasas-ref-wrap summary {
+  cursor: pointer; list-style: none;
+  font-size: 13px; font-weight: 600;
+  color: var(--green-700); padding: .5rem 0;
+  user-select: none;
+}
+body.dark .tasas-ref-wrap summary { color: var(--green-400); }
+.tasas-ref-tbl {
+  width: 100%; border-collapse: collapse;
+  font-size: 12.5px; min-width: 440px;
+}
+.tasas-ref-tbl th {
+  text-align: left; padding: 6px 8px;
+  font-size: 10.5px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .5px;
+  border-bottom: 1px solid var(--line);
+}
+.tasas-ref-tbl td { padding: 6px 8px; color: var(--ink-3); border-bottom: 1px solid var(--line); text-align: center; }
+.tasas-ref-tbl td:first-child { text-align: left; }
+.tasas-ref-tbl tr:nth-child(even) { background: var(--bg-2); }
+.tmc-row td { color: var(--red-500) !important; font-weight: 600; }
+.tasas-ref-nota { font-size: 11.5px; color: var(--muted); margin-top: .75rem; line-height: 1.6; }
