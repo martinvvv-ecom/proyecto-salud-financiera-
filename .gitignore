@@ -3,3 +3,6 @@
 
 # Skill empaquetada (se regenera, no versionar el zip)
 docs/saludfinancieraabpskill.zip
+
+# Local Netlify folder
+.netlify
