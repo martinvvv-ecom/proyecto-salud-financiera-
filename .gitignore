@@ -1,0 +1,5 @@
+# macOS
+.DS_Store
+
+# Skill empaquetada (se regenera, no versionar el zip)
+docs/saludfinancieraabpskill.zip
