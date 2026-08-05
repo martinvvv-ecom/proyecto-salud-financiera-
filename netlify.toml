@@ -1,0 +1,12 @@
+# Configuración de despliegue — Salud Financiera
+#
+# docs/ es documentación interna del equipo (instrucciones de arranque, skill
+# del proyecto). No tiene por qué quedar accesible en el sitio público, así que
+# el sitio se arma en dist/ copiando solo lo que va a producción.
+
+[build]
+  command = """
+    rm -rf dist && mkdir dist && \
+    cp -R index.html manifest.json sw.js favicon.ico css js assets dist/
+  """
+  publish = "dist"

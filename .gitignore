@@ -6,3 +6,6 @@ docs/saludfinancieraabpskill.zip
 
 # Local Netlify folder
 .netlify
+
+# Salida de build (se regenera)
+dist
