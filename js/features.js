@@ -354,3 +354,144 @@ if (document.readyState === 'loading') {
 } else {
   SF_FEATURES.init();
 }
+
+/* ============================================================
+   FEEDBACK BETA — Encuesta corta con envío a Netlify Forms
+   ============================================================
+   El formulario del modal se arma acá (JS), así que Netlify no puede
+   detectarlo escaneando el HTML. Por eso index.html lleva además un
+   form estático oculto con name="beta-feedback" y los mismos campos:
+   ese es el que Netlify registra. El envío real es este fetch().
+   Requisitos del endpoint de Netlify Forms:
+     - POST a "/" (una ruta del propio sitio)
+     - Content-Type: application/x-www-form-urlencoded
+     - el campo form-name con el nombre del formulario
+   ============================================================ */
+const SF_FEEDBACK = {
+
+  ESCALAS: {
+    utilidad : ['Nada útil', 'Poco útil', 'Más o menos', 'Útil', 'Muy útil'],
+    facilidad: ['Muy difícil', 'Difícil', 'Normal', 'Fácil', 'Muy fácil']
+  },
+
+  _armado: false,
+
+  /* --- Construcción de las escalas 1-5 ------------------------ */
+  buildScales() {
+    if (this._armado) return;
+    document.querySelectorAll('[data-fb-scale]').forEach(cont => {
+      const campo = cont.dataset.fbScale;
+      const hints = this.ESCALAS[campo] || [];
+      let html = '';
+      for (let i = 1; i <= 5; i++) {
+        html += `<input type="radio" name="${campo}" id="fb-${campo}-${i}" value="${i}" required>` +
+                `<label class="fb-star" for="fb-${campo}-${i}" data-val="${i}" ` +
+                `title="${i} — ${hints[i-1] || ''}" aria-label="${i} de 5: ${hints[i-1] || ''}">★</label>`;
+      }
+      html += `<span class="fb-scale-hint" id="fb-hint-${campo}"></span>`;
+      cont.innerHTML = html;
+
+      // Pintar hasta la estrella elegida (el CSS por sí solo no puede
+      // seleccionar hermanos anteriores)
+      cont.addEventListener('change', e => {
+        if (e.target.type !== 'radio') return;
+        const val = parseInt(e.target.value, 10);
+        cont.querySelectorAll('.fb-star').forEach(s => {
+          s.classList.toggle('on', parseInt(s.dataset.val, 10) <= val);
+        });
+        const hint = cont.querySelector('.fb-scale-hint');
+        if (hint) hint.textContent = hints[val - 1] || '';
+      });
+    });
+    this._armado = true;
+  },
+
+  /* --- Abrir / cerrar ----------------------------------------- */
+  open() {
+    this.buildScales();
+    const modal = document.getElementById('fb-modal');
+    modal?.classList.add('open');
+    document.addEventListener('keydown', this._onKey);
+  },
+
+  close() {
+    document.getElementById('fb-modal')?.classList.remove('open');
+    document.removeEventListener('keydown', this._onKey);
+  },
+
+  _onKey(e) { if (e.key === 'Escape') SF_FEEDBACK.close(); },
+
+  /* --- Validación --------------------------------------------- */
+  _error(msg) {
+    const box = document.getElementById('fb-error');
+    if (!box) return;
+    box.textContent = msg;
+    box.classList.add('show');
+  },
+
+  _clearError() {
+    document.getElementById('fb-error')?.classList.remove('show');
+  },
+
+  /* --- Envío --------------------------------------------------- */
+  encode(data) {
+    return Object.keys(data)
+      .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
+      .join('&');
+  },
+
+  async submit(ev) {
+    ev.preventDefault();
+    this._clearError();
+
+    const form  = document.getElementById('fb-form');
+    const btn   = document.getElementById('fb-submit');
+    const util  = form.querySelector('input[name="utilidad"]:checked');
+    const facil = form.querySelector('input[name="facilidad"]:checked');
+    const mod   = document.getElementById('fb-modulo');
+    const com   = document.getElementById('fb-comentario');
+    const cons  = document.getElementById('fb-consentimiento');
+    const hp    = document.getElementById('fb-bot-field');
+
+    if (!util)         return this._error('Falta responder qué tan útil te pareció la app.');
+    if (!facil)        return this._error('Falta responder qué tan fácil fue de usar.');
+    if (!mod.value)    return this._error('Falta elegir el módulo que más usaste.');
+    if (!cons.checked) return this._error('Necesitamos tu consentimiento para usar la respuesta.');
+
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+
+    try {
+      const res = await fetch('/', {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body   : this.encode({
+          'form-name'        : 'beta-feedback',
+          'utilidad'         : util.value,
+          'facilidad'        : facil.value,
+          'modulo_mas_usado' : mod.value,
+          'comentario'       : com.value.trim(),
+          'consentimiento'   : cons.checked ? 'sí' : 'no',
+          'bot-field'        : hp ? hp.value : ''
+        })
+      });
+
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+
+      // Éxito: la confirmación reemplaza al formulario
+      document.getElementById('fb-form-wrap').style.display = 'none';
+      document.getElementById('fb-done').style.display      = 'block';
+
+    } catch (err) {
+      console.error('Feedback:', err);
+      this._error('No pudimos enviar tu respuesta. Revisa tu conexión e inténtalo de nuevo.');
+      btn.disabled = false;
+      btn.textContent = 'Enviar';
+    }
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('fb-form')
+    ?.addEventListener('submit', ev => SF_FEEDBACK.submit(ev));
+});

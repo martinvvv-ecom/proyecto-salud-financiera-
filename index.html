@@ -51,6 +51,7 @@
   <div class="logo">
     <div class="logo-icon">💚</div>
     Salud<span>Financiera</span>
+    <span class="beta-badge" title="Lanzada el 30 de julio de 2026 — tu feedback nos ayuda a mejorar">🧪 Beta pública</span>
   </div>
 
   <div class="topbar-nav">
@@ -1445,6 +1446,136 @@
     <button class="pwa-btn" onclick="SF_FEATURES.installPwa()">Instalar</button>
   </div>
 </div>
+
+<!-- ================================================================
+     FEEDBACK BETA — Botón flotante
+     Va después de #pwa-banner a propósito: la regla
+     .pwa-banner.show ~ .fb-fab lo sube cuando el banner está visible,
+     y el combinador ~ solo alcanza hermanos posteriores.
+     ================================================================ -->
+<button class="fb-fab" id="fb-fab" onclick="SF_FEEDBACK.open()"
+        aria-label="Danos tu opinión sobre la beta">
+  <span class="fb-fab-icon" aria-hidden="true">💬</span>
+  <span class="fb-fab-text">Danos tu opinión</span>
+</button>
+
+<!-- ================================================================
+     FEEDBACK BETA — Modal de encuesta
+     ================================================================ -->
+<div class="modal-backdrop fb-modal" id="fb-modal"
+     onclick="if(event.target===this)SF_FEEDBACK.close()"
+     role="dialog" aria-modal="true" aria-labelledby="fb-modal-title">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-avatar-big" aria-hidden="true">💬</div>
+      <div>
+        <div class="modal-title" id="fb-modal-title">Danos tu opinión</div>
+        <div class="modal-sub">Estamos en beta — tu respuesta nos ayuda</div>
+      </div>
+      <button class="modal-close" onclick="SF_FEEDBACK.close()" aria-label="Cerrar">✕</button>
+    </div>
+
+    <!-- Formulario -->
+    <div id="fb-form-wrap">
+      <p class="fb-intro">
+        Son 4 preguntas y toma menos de un minuto. La respuesta es anónima:
+        no pedimos tu nombre ni tu correo.
+      </p>
+
+      <form id="fb-form" novalidate>
+        <div class="fb-field">
+          <label class="fb-label">
+            ¿Qué tan útil te pareció la app para entender tus finanzas? <span class="fb-req">*</span>
+          </label>
+          <div class="fb-scale" data-fb-scale="utilidad" role="radiogroup"
+               aria-label="Utilidad, de 1 a 5">
+            <!-- Los radios se generan en JS para no repetir 10 bloques iguales -->
+          </div>
+        </div>
+
+        <div class="fb-field">
+          <label class="fb-label">
+            ¿Qué tan fácil fue de usar? <span class="fb-req">*</span>
+          </label>
+          <div class="fb-scale" data-fb-scale="facilidad" role="radiogroup"
+               aria-label="Facilidad de uso, de 1 a 5">
+          </div>
+        </div>
+
+        <div class="fb-field">
+          <label class="fb-label" for="fb-modulo">
+            ¿Qué módulo usaste más? <span class="fb-req">*</span>
+          </label>
+          <select class="fb-select" id="fb-modulo" name="modulo_mas_usado" required>
+            <option value="">Elige una opción…</option>
+            <option>Panel</option>
+            <option>Simulador de Créditos</option>
+            <option>Aprende y Crece</option>
+            <option>Presupuesto</option>
+            <option>Inversiones y APV</option>
+            <option>Comparador Automotriz</option>
+            <option>Herramientas para Emprendedores</option>
+            <option>Acerca de</option>
+          </select>
+        </div>
+
+        <div class="fb-field">
+          <label class="fb-label" for="fb-comentario">¿Qué le agregarías o mejorarías?</label>
+          <textarea class="fb-textarea" id="fb-comentario" name="comentario"
+                    placeholder="Lo que se te ocurra: algo que faltó, algo que costó encontrar, un error…"></textarea>
+        </div>
+
+        <div class="fb-field">
+          <label class="fb-check">
+            <input type="checkbox" id="fb-consentimiento" name="consentimiento" required>
+            <span class="fb-check-text">
+              Acepto que esta respuesta anónima se use como parte del proyecto escolar. <span class="fb-req">*</span>
+            </span>
+          </label>
+        </div>
+
+        <!-- Honeypot: invisible para personas, tentador para bots -->
+        <div class="fb-hp" aria-hidden="true">
+          <label>No llenar este campo
+            <input type="text" name="bot-field" id="fb-bot-field" tabindex="-1" autocomplete="off">
+          </label>
+        </div>
+
+        <div class="fb-error" id="fb-error" role="alert"></div>
+
+        <button type="submit" class="btn btn-primary fb-submit" id="fb-submit">Enviar</button>
+      </form>
+    </div>
+
+    <!-- Confirmación: reemplaza al formulario tras el envío -->
+    <div class="fb-done" id="fb-done" style="display:none">
+      <div class="fb-done-icon" aria-hidden="true">🎉</div>
+      <div class="fb-done-title">¡Gracias por tu feedback!</div>
+      <div class="fb-done-sub">
+        Lo leemos todo. Nos sirve un montón para mejorar la plataforma antes
+        de la entrega final.
+      </div>
+      <button class="btn btn-primary" onclick="SF_FEEDBACK.close()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     FEEDBACK BETA — Formulario estático para Netlify Forms
+     Netlify detecta formularios escaneando el HTML en el deploy. El form
+     del modal de arriba se arma con JS, así que Netlify nunca lo vería.
+     Este duplicado oculto es el que registra el form y sus campos; el
+     envío real va por fetch() desde js/features.js con el mismo name.
+     Los name= de acá tienen que coincidir exactamente con los de allá.
+     ================================================================ -->
+<form name="beta-feedback" data-netlify="true" data-netlify-honeypot="bot-field" hidden>
+  <input type="text" name="utilidad" />
+  <input type="text" name="facilidad" />
+  <input type="text" name="modulo_mas_usado" />
+  <textarea name="comentario"></textarea>
+  <input type="checkbox" name="consentimiento" />
+  <input type="text" name="bot-field" />
+</form>
 
 <footer>
   <strong>Salud Financiera</strong> — Proyecto ABP · Martín Vergara · Tomás Arriagada · Matías Toloza<br>

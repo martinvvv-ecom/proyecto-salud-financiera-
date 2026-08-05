@@ -713,3 +713,132 @@ body.dark .tasas-ref-wrap summary { color: var(--green-400); }
 .tasas-ref-tbl tr:nth-child(even) { background: var(--bg-2); }
 .tmc-row td { color: var(--red-500) !important; font-weight: 600; }
 .tasas-ref-nota { font-size: 11.5px; color: var(--muted); margin-top: .75rem; line-height: 1.6; }
+
+/* ============================================================
+   BETA PÚBLICA — Badge en la topbar
+   Discreto: no debe competir con la navegación. Especificidad
+   .logo .beta-badge (0,2,0) para ganarle a la regla .logo span
+   {display:none} del breakpoint de 400px, que si no lo ocultaría.
+   ============================================================ */
+.logo .beta-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 99px;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.85);
+  font-family: var(--ff-body); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0; white-space: nowrap;
+  cursor: help;
+}
+@media(max-width:400px) {
+  .logo .beta-badge { font-size: 9.5px; padding: 2px 6px; }
+}
+
+/* ============================================================
+   FEEDBACK BETA — Botón flotante
+   Fixed, así que acompaña en todas las vistas del SPA.
+   ============================================================ */
+.fb-fab {
+  position: fixed; right: 20px; bottom: 20px; z-index: 900;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 18px; border: none; border-radius: 99px;
+  background: var(--green-600); color: #fff;
+  font-family: var(--ff-body); font-size: 13.5px; font-weight: 600;
+  box-shadow: 0 4px 16px rgba(23,133,102,.35);
+  cursor: pointer; transition: transform .2s, box-shadow .2s, background .2s;
+}
+.fb-fab:hover  { background: var(--green-700); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(23,133,102,.45); }
+.fb-fab:active { transform: translateY(0); }
+.fb-fab-icon   { font-size: 16px; line-height: 1; }
+body.dark .fb-fab { background: var(--green-500); }
+body.dark .fb-fab:hover { background: var(--green-400); }
+
+/* El banner de instalación PWA vive abajo: subir el botón para no taparlo */
+.pwa-banner.show ~ .fb-fab { bottom: 96px; }
+
+@media(max-width:600px) {
+  /* En móvil queda solo el ícono, en círculo, para no tapar contenido */
+  .fb-fab {
+    right: 14px; bottom: 14px; padding: 0;
+    width: 50px; height: 50px; border-radius: 50%; justify-content: center;
+  }
+  .fb-fab-text { display: none; }
+  .pwa-banner.show ~ .fb-fab { bottom: 90px; }
+}
+
+/* ============================================================
+   FEEDBACK BETA — Modal
+   Reutiliza .modal-backdrop / .modal-card del modal de perfil.
+   ============================================================ */
+.fb-modal .modal-card { max-width: 520px; width: 100%; max-height: 88vh; overflow-y: auto; }
+.fb-intro { font-size: 13px; color: var(--ink-3); line-height: 1.6; margin-bottom: 1.25rem; }
+.fb-field { margin-bottom: 1.25rem; }
+.fb-label {
+  display: block; font-size: 13px; font-weight: 600;
+  color: var(--ink-2); margin-bottom: .55rem; line-height: 1.45;
+}
+.fb-req { color: var(--red-500); font-weight: 700; }
+
+/* Escala 1-5 en estrellas: radios reales por accesibilidad, label como estrella */
+.fb-scale { display: flex; gap: 6px; align-items: center; }
+.fb-scale input[type="radio"] {
+  position: absolute; opacity: 0; width: 0; height: 0;
+}
+.fb-star {
+  font-size: 26px; line-height: 1; cursor: pointer;
+  filter: grayscale(1) opacity(.35);
+  transition: filter .15s, transform .15s;
+  user-select: none;
+}
+.fb-star:hover { transform: scale(1.15); }
+/* El pintado de estrellas lo hace el JS con la clase .on: un selector
+   :checked ~ .fb-star iluminaría las estrellas posteriores a la elegida,
+   que es al revés de lo que espera una escala. */
+.fb-star.on { filter: none; }
+.fb-scale input[type="radio"]:focus-visible + .fb-star {
+  outline: 2px solid var(--green-500); outline-offset: 3px; border-radius: 4px;
+}
+.fb-scale-hint { font-size: 11.5px; color: var(--muted); margin-left: 8px; min-width: 74px; }
+
+.fb-select, .fb-textarea {
+  width: 100%; padding: 10px 12px;
+  border: 1.5px solid var(--line); border-radius: var(--r-sm);
+  background: var(--surface); color: var(--ink);
+  font-family: var(--ff-body); font-size: 13.5px;
+}
+.fb-select:focus, .fb-textarea:focus {
+  outline: none; border-color: var(--green-500);
+}
+.fb-textarea { min-height: 92px; resize: vertical; line-height: 1.55; }
+
+.fb-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.fb-check input[type="checkbox"] {
+  width: 17px; height: 17px; margin-top: 1px; flex-shrink: 0;
+  accent-color: var(--green-600); cursor: pointer;
+}
+.fb-check-text { font-size: 12.5px; color: var(--ink-3); line-height: 1.55; }
+
+/* Honeypot anti-spam: debe existir en el DOM pero jamás verse ni
+   recibir foco. Los bots lo rellenan, las personas no lo ven. */
+.fb-hp {
+  position: absolute !important; left: -9999px !important;
+  width: 1px; height: 1px; overflow: hidden;
+}
+
+.fb-error {
+  font-size: 12.5px; color: var(--red-500); font-weight: 600;
+  margin-bottom: .85rem; display: none;
+}
+.fb-error.show { display: block; }
+
+.fb-submit { width: 100%; }
+.fb-submit:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Estado de confirmación que reemplaza al formulario */
+.fb-done { text-align: center; padding: 1.5rem .5rem; }
+.fb-done-icon { font-size: 46px; margin-bottom: .75rem; }
+.fb-done-title {
+  font-family: var(--ff-head); font-size: 19px; font-weight: 800;
+  color: var(--ink); margin-bottom: .5rem;
+}
+.fb-done-sub { font-size: 13.5px; color: var(--ink-3); line-height: 1.6; margin-bottom: 1.5rem; }

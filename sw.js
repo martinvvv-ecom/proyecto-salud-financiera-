@@ -4,7 +4,7 @@
                 Network-first para APIs externas (mindicador.cl)
    ================================================================ */
 
-const CACHE_NAME = 'salud-financiera-v1';
+const CACHE_NAME = 'salud-financiera-v3';
 const CORE_ASSETS = [
   './',
   './index.html',

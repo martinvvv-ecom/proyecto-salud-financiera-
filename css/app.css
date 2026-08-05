@@ -47,6 +47,26 @@ body.dark {
   --red-50:#1a0808; --red-100:#2a0d0d;
   --blue-50:#080f20; --blue-100:#0d1830;
 }
+/* ------------------------------------------------------------------
+   Captura de PDF — fuerza la paleta clara
+   El nodo que captura html2canvas hereda las variables del <body>. Con
+   'dark' activo eso da texto casi blanco (--ink:#ddeee8) sobre el fondo
+   blanco del PDF, o sea un documento ilegible. Al redeclarar las
+   variables en el propio nodo, el subárbol usa los valores claros sin
+   importar el tema que tenga el usuario en pantalla.
+   ------------------------------------------------------------------ */
+.pdf-force-light {
+  --ink:#111816; --ink-2:#2e3d38; --ink-3:#4a5e57;
+  --muted:#7a9490; --line:#e2ece9;
+  --surface:#ffffff; --bg:#f5faf8; --bg-2:#edf5f2;
+  --green-50:#f0fdf8; --green-100:#d8f7ed; --green-200:#a8ecd4;
+  --amber-50:#fffbeb; --amber-100:#fef3c7;
+  --red-50:#fff1f1;   --red-100:#fee2e2;
+  --blue-50:#eff6ff;  --blue-100:#dbeafe;
+  color:#111816;
+  background:#ffffff;
+}
+
 body.dark .topbar        { background:#060e0c; border-bottom:1px solid #1c3530; }
 body.dark .mobile-drawer { background:#060e0c; }
 body.dark .welcome-strip { background:linear-gradient(135deg,#060e0c 0%,#0a2018 100%); }

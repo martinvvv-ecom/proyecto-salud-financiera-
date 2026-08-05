@@ -2095,7 +2095,7 @@ function importCalc() {
    EDIT 8: FICHA CLÍNICA FINANCIERA — exportPDF() mejorado
    Documento de 2 secciones: Executive Summary + Score + Budget + Inversión
    ============================================================ */
-function exportPDF() {
+async function exportPDF() {
   const ing       = parseFloat($('b-ingreso').value) || 0;
   const deu       = parseFloat($('b-deuda').value)   || 0;
   const totReal   = budgetRows.reduce((s, r) => s + r.real,   0);
@@ -2246,11 +2246,29 @@ function exportPDF() {
     </div>
   </div>`;
 
-  // Contenedor temporal fuera de pantalla: visible para html2canvas (no display:none)
+  // Contenedor temporal fuera de pantalla, en DOS niveles. Esto importa:
+  //
+  //  - display:none no sirve: un nodo sin layout no tiene dimensiones y se
+  //    captura vacío.
+  //  - Pero position:absolute sobre el nodo que se captura TAMPOCO sirve:
+  //    html2pdf clona ese nodo dentro de su propio contenedor de medición, y
+  //    un clon posicionado en absoluto queda fuera del flujo, así que el
+  //    contenedor mide 0 de alto. El lienzo sale 794x0 y el PDF, en blanco.
+  //    Esa era la causa real del bug.
+  //
+  // Por eso el posicionamiento fuera de pantalla va en el envoltorio y el
+  // nodo que se le pasa a html2pdf queda en flujo normal, con altura real.
+  // La clase pdf-force-light neutraliza el tema oscuro (ver css/app.css).
+  const pdfWrap = document.createElement('div');
+  pdfWrap.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;';
+
   const pdfTmp = document.createElement('div');
-  pdfTmp.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;background:#fff;font-family:sans-serif;';
+  pdfTmp.className = 'pdf-force-light';
+  pdfTmp.style.cssText = 'width:794px;background:#fff;color:#111816;font-family:sans-serif;';
   pdfTmp.innerHTML = htmlPDF;
-  document.body.appendChild(pdfTmp);
+
+  pdfWrap.appendChild(pdfTmp);
+  document.body.appendChild(pdfWrap);
 
   const opt = {
     margin      : [6, 6, 6, 6],
@@ -2259,9 +2277,37 @@ function exportPDF() {
     html2canvas : { scale:2, useCORS:true, logging:false, backgroundColor:'#ffffff' },
     jsPDF       : { unit:'mm', format:'a4', orientation:'portrait' }
   };
-  html2pdf().set(opt).from(pdfTmp).save()
-    .then(() => document.body.removeChild(pdfTmp))
-    .catch(() => { document.body.removeChild(pdfTmp); alert('Error al generar PDF. Verifica tu conexión a internet.'); });
+
+  try {
+    // Esperar a que el navegador pinte el nodo recién insertado. El doble
+    // requestAnimationFrame garantiza que pasó un frame completo; sin esto
+    // html2canvas puede capturar antes de que exista layout.
+    //
+    // Ojo: rAF NO dispara en pestañas ocultas. Si el usuario aprieta el botón
+    // y se cambia de pestaña, esperar solo el rAF colgaría la descarga para
+    // siempre. Por eso cada espera corre contra un plazo máximo: en pestaña
+    // visible gana el rAF (unos 16 ms), y si está oculta gana el plazo.
+    const pintado = new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await Promise.race([pintado, new Promise(r => setTimeout(r, 300))]);
+    await new Promise(r => setTimeout(r, 50));
+
+    // Las tipografías vienen de Google Fonts. Si aún no cargaron, el texto
+    // se mide contra una fuente distinta a la que se pinta. Sin conexión esto
+    // puede no resolverse nunca, así que también lleva plazo.
+    if (document.fonts?.ready) {
+      await Promise.race([
+        document.fonts.ready.catch(() => {}),
+        new Promise(r => setTimeout(r, 1500))
+      ]);
+    }
+
+    await html2pdf().set(opt).from(pdfTmp).save();
+  } catch (err) {
+    console.error('exportPDF:', err);
+    alert('Error al generar PDF. Verifica tu conexión a internet.');
+  } finally {
+    pdfWrap.remove();
+  }
 }
 
 /* ============================================================
