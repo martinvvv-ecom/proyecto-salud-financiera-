@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b3d2e">
+  <meta name="description" content="Plataforma de educación financiera y gestión personal para Chile. Score Financiero, simulador de créditos con CAE, presupuesto, inversiones y herramientas para emprendedores.">
+  <meta name="author" content="Martín Vergara, Tomás Arriagada, Matías Toloza">
+  <meta name="keywords" content="finanzas personales, CAE, AFP, APV, presupuesto, educación financiera, Chile, dropshipping, SII">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Salud Financiera">
+  <meta property="og:description" content="Toma el control de tus finanzas. Score, simulador de CAE, AFP y más.">
+  <meta property="og:locale" content="es_CL">
+
+  <title>Salud Financiera — Educación financiera y gestión personal</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16.png">
+  <link rel="icon" href="favicon.ico">
+
+  <!-- iOS PWA support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Salud Financiera">
+
+  <!-- Fonts (preconnect for perf) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/features.css">
+
+  <!-- External libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+</head>
+<body>
+
+<!-- ================================================================
+     TOPBAR
+     Contiene: logo | nav | FEATURE 5 (indicadores) | FEATURE 3 (dark) | hamburger
+     ================================================================ -->
+<nav class="topbar">
+  <div class="logo">
+    <div class="logo-icon">💚</div>
+    Salud<span>Financiera</span>
+  </div>
+
+  <div class="topbar-nav">
+    <button class="nav-pill active" onclick="navigate('dashboard',this)"><span>📊</span> Panel</button>
+    <button class="nav-pill" onclick="navigate('simulador',this)"><span>🧮</span> Simulador</button>
+    <button class="nav-pill" onclick="navigate('educativa',this)"><span>📚</span> Aprende</button>
+    <button class="nav-pill" onclick="navigate('presupuesto',this)"><span>📋</span> Presupuesto</button>
+    <button class="nav-pill" onclick="navigate('inversiones',this)"><span>📈</span> Inversiones</button>
+    <button class="nav-pill" onclick="navigate('autos',this)"><span>🚗</span> Autos</button>
+    <button class="nav-pill" onclick="navigate('emprendedores',this)"><span>🚀</span> Emprendedores</button>
+    <button class="nav-pill" onclick="navigate('about',this)"><span>ℹ️</span> Acerca de</button>
+    <div id="nav-indicator"></div>
+  </div>
+  <span class="mobile-section-title" id="mobile-section-title">Panel</span>
+
+  <!-- ============================================================
+       FEATURE 5: INDICADORES ECONÓMICOS EN VIVO
+       Widget que muestra UF y Dólar obtenidos de mindicador.cl
+       ============================================================ -->
+  <div class="indicators-widget" id="indicators-widget">
+    <div class="ind-block">
+      <span class="ind-lbl">UF</span>
+      <span class="ind-val" id="ind-uf"><span class="ind-loading">···</span></span>
+    </div>
+    <div class="ind-sep"></div>
+    <div class="ind-block">
+      <span class="ind-lbl">USD</span>
+      <span class="ind-val" id="ind-usd"><span class="ind-loading">···</span></span>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       PROFILE BUTTON — Login simulado
+       ============================================================ -->
+  <button class="profile-btn empty" id="profile-btn" onclick="SF_FEATURES.openProfileModal()" title="Mi perfil">👤</button>
+
+  <!-- ============================================================
+       FEATURE 3: DARK MODE TOGGLE — botón en la topbar
+       ============================================================ -->
+  <button class="dark-btn" id="dark-btn" onclick="toggleDarkMode()" title="Cambiar tema">
+    <span id="dark-icon">🌙</span>
+  </button>
+
+  <!-- Hamburger (solo móvil) -->
+  <button class="hamburger" id="ham-btn" onclick="toggleMobileMenu()" aria-label="Menú">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Overlay para drawer móvil -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeMobileMenu()"></div>
+
+<!-- Mobile Drawer -->
+<div class="mobile-drawer" id="mobile-drawer">
+  <button class="nav-pill active" onclick="navigate('dashboard',this);closeMobileMenu()"><span>📊</span> Panel Principal</button>
+  <button class="nav-pill" onclick="navigate('simulador',this);closeMobileMenu()"><span>🧮</span> Simulador de Créditos</button>
+  <button class="nav-pill" onclick="navigate('educativa',this);closeMobileMenu()"><span>📚</span> Aprende y Crece</button>
+  <button class="nav-pill" onclick="navigate('presupuesto',this);closeMobileMenu()"><span>📋</span> Presupuesto Mensual</button>
+  <button class="nav-pill" onclick="navigate('inversiones',this);closeMobileMenu()"><span>📈</span> Inversiones & APV</button>
+  <button class="nav-pill" onclick="navigate('autos',this);closeMobileMenu()"><span>🚗</span> Comparador Automotriz</button>
+  <button class="nav-pill" onclick="navigate('emprendedores',this);closeMobileMenu()"><span>🚀</span> Emprendedores</button>
+  <button class="nav-pill" onclick="navigate('about',this);closeMobileMenu()"><span>ℹ️</span> Acerca de</button>
+  <!-- Indicadores en drawer móvil -->
+  <div class="mobile-inds" id="mobile-inds">
+    <div class="ind-block"><span class="ind-lbl">UF</span><span class="ind-val" id="m-ind-uf">···</span></div>
+    <div class="ind-block"><span class="ind-lbl">USD</span><span class="ind-val" id="m-ind-usd">···</span></div>
+  </div>
+</div>
+
+<main class="main">
+
+<!-- ================================================================
+     PÁGINA 1: DASHBOARD
+     FEATURE 1: Sin inputs manuales. Lee de budgetRows + b-ingreso (Presupuesto)
+     ================================================================ -->
+<section class="page active" id="page-dashboard">
+
+  <div class="welcome-strip">
+    <div>
+      <div class="welcome-title">¡Bienvenido a tu panel financiero! 👋</div>
+      <div class="welcome-sub">Los datos se sincronizan automáticamente desde tu Presupuesto.</div>
+    </div>
+    <!-- FEAT A: Gauge se renderiza con JS en dashUpdate() -->
+    <div class="gauge-wrap" id="gauge-wrap">
+      <svg class="gauge-svg" id="gauge-svg" width="180" height="100" viewBox="0 0 180 100"></svg>
+      <div class="gauge-score-big" id="gauge-score" style="color:#fff">···/1000</div>
+      <div class="gauge-label" id="gauge-label" style="background:rgba(255,255,255,.15);color:#fff">Calculando…</div>
+    </div>
+  </div>
+
+<!-- ================================================================
+     SHARE BUTTON — Botón de compartir reporte (Web Share API)
+     ================================================================ -->
+<div style="display:flex;justify-content:flex-end;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
+  <button class="btn-tour" id="tour-btn" onclick="startTour()" title="Tour guiado de la app">
+    <span>🗺️</span> ¿Cómo funciona?
+  </button>
+  <button class="btn-share" onclick="SF_FEATURES.shareReport()" title="Compartir mi progreso">
+    <span>📤</span> Compartir mi progreso
+  </button>
+</div>
+
+  <!-- ============================================================
+       FEATURE 1: SSOT — Tarjetas de solo lectura.
+       Los valores provienen de budgetRows y b-ingreso del presupuesto.
+       ============================================================ -->
+  <div class="g4 mb2">
+    <div class="stat-card green">
+      <div class="stat-icon green">💰</div>
+      <div class="stat-label">Ingresos mensuales</div>
+      <div class="stat-value green" id="d-ingreso">$0</div>
+      <div class="ssot-badge">⟳ desde Presupuesto</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-icon red">💸</div>
+      <div class="stat-label">Gastos reales del mes</div>
+      <div class="stat-value red" id="d-gasto">$0</div>
+      <div class="ssot-badge">⟳ suma de gastos</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-icon amber">📉</div>
+      <div class="stat-label">Deudas vigentes</div>
+      <div class="stat-value amber" id="d-deuda">$0</div>
+      <div class="ssot-badge">⟳ desde Presupuesto</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-icon blue">🏦</div>
+      <div class="stat-label">Capacidad de ahorro</div>
+      <div class="stat-value blue" id="d-ahorro">$0</div>
+      <div class="stat-hint">Ingresos − gastos reales</div>
+    </div>
+  </div>
+
+  <!-- FEAT A: Factores del score -->
+  <div class="score-factors mb2" id="score-factors">
+    <div class="score-factor">
+      <div class="score-factor-val" id="sf-ahorro" style="color:var(--green-600)">—</div>
+      <div class="score-factor-lbl">% Ahorro</div>
+    </div>
+    <div class="score-factor">
+      <div class="score-factor-val" id="sf-gasto" style="color:var(--amber-500)">—</div>
+      <div class="score-factor-lbl">% Gastos</div>
+    </div>
+    <div class="score-factor">
+      <div class="score-factor-val" id="sf-deuda" style="color:var(--red-500)">—</div>
+      <div class="score-factor-lbl">% Deuda</div>
+    </div>
+    <div class="score-factor">
+      <div class="score-factor-val" id="sf-puntos-ahorro" style="color:var(--green-600)">+0</div>
+      <div class="score-factor-lbl">Pts ahorro</div>
+    </div>
+    <div class="score-factor">
+      <div class="score-factor-val" id="sf-puntos-gasto" style="color:var(--muted)">−0</div>
+      <div class="score-factor-lbl">Pts gastos</div>
+    </div>
+    <div class="score-factor">
+      <div class="score-factor-val" id="sf-puntos-deuda" style="color:var(--muted)">−0</div>
+      <div class="score-factor-lbl">Pts deuda</div>
+    </div>
+  </div>
+
+  <!-- PART 3 — INSIGHT 1: Alerta contextual basada en el score financiero -->
+  <div id="score-insight" style="margin-bottom:1.5rem;display:none"></div>
+
+  <!-- EDIT 1: RESUMEN EJECUTIVO ANUALIZADO -->
+  <div class="exec-summary-card" id="exec-summary">
+    <div class="exec-summary-title">📋 Resumen Ejecutivo Anualizado</div>
+    <div class="exec-summary-text" id="exec-summary-text">Cargando datos desde el Presupuesto…</div>
+  </div>
+
+  <div class="g2 mb2">
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;margin-bottom:1rem;color:var(--ink-2)">Distribución del ingreso</div>
+      <div style="max-height:220px;display:flex;justify-content:center">
+        <canvas id="donut-chart" width="220" height="220"></canvas>
+      </div>
+      <div id="donut-legend" style="margin-top:1rem;display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;margin-bottom:1rem;color:var(--ink-2)">Gasto real por categoría</div>
+      <div id="dash-bars"></div>
+      <hr class="divider">
+      <div id="dash-rule" style="font-size:12.5px;color:var(--muted);line-height:1.6"></div>
+    </div>
+  </div>
+
+  <div id="dash-alerts"></div>
+
+  <div class="card">
+    <div style="font-size:14px;font-weight:600;margin-bottom:1rem;color:var(--ink-2)">Tendencia de ahorro — últimos 6 meses</div>
+    <div style="height:150px;position:relative">
+      <canvas id="trend-chart"></canvas>
+    </div>
+  </div>
+
+</section>
+
+<!-- ================================================================
+     PÁGINA 2: SIMULADOR DE CRÉDITOS
+     ================================================================ -->
+<section class="page" id="page-simulador">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Simulador de Créditos</h1>
+      <p class="page-sub">Descubre si un crédito es seguro para tu bolsillo antes de firmarlo.</p>
+    </div>
+    <span class="badge blue">Herramienta interactiva</span>
+  </div>
+
+  <div class="alert info mb15">
+    <span class="alert-icon">ℹ️</span>
+    <div><strong>Regla de oro:</strong> El total de tus cuotas mensuales <strong>no debe superar el 35% de tus ingresos netos</strong>. Lo calculamos automáticamente.</div>
+  </div>
+
+  <div class="g2">
+    <div>
+      <div class="card mb1">
+        <div class="sec-label">Parámetros del crédito</div>
+
+        <!-- ============================================================
+             REQ 2 & 3: SELECTOR DE MONEDA
+             Botones CLP / UF / USD. Al cambiar llama a onCurrencyChange()
+             que recalcula los límites del slider según la API.
+             ============================================================ -->
+        <div class="currency-group">
+          <span class="currency-lbl">Moneda:</span>
+          <button class="currency-btn active" id="cur-CLP" onclick="onCurrencyChange('CLP')">$ CLP</button>
+          <button class="currency-btn" id="cur-UF"  onclick="onCurrencyChange('UF')">UF</button>
+          <button class="currency-btn" id="cur-USD" onclick="onCurrencyChange('USD')">USD</button>
+        </div>
+
+        <!-- REQ 1 & 3: slider con max=200.000.000 y step=500.000 para CLP.
+             Los atributos se reescriben dinámicamente en onCurrencyChange(). -->
+        <div class="slider-group">
+          <div class="slider-top">
+            <span class="slider-lbl" id="s-monto-lbl-label">Monto a solicitar</span>
+            <span class="slider-val" id="s-monto-lbl">$5.000.000</span>
+          </div>
+          <input type="range" class="slider" id="s-monto"
+                 min="500000" max="200000000" step="500000" value="5000000"
+                 oninput="simUpdate();saveSim()">
+          <div class="prog-labels">
+            <span id="s-monto-min">$500.000</span>
+            <span id="s-monto-max">$200.000.000</span>
+          </div>
+          <!-- REQ 3: chip que muestra la tasa de conversión usada -->
+          <div class="rate-chip hidden" id="s-rate-chip">⟳ 1 UF = $0</div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top">
+            <span class="slider-lbl">Plazo de pago</span>
+            <span class="slider-val" id="s-plazo-lbl">12 meses</span>
+          </div>
+          <input type="range" class="slider" id="s-plazo" min="3" max="360" step="3" value="12" oninput="simUpdate();saveSim()">
+          <div class="prog-labels"><span>3 meses</span><span>360 meses (30 años)</span></div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-top">
+            <span class="slider-lbl">Tasa de interés mensual</span>
+            <span class="slider-val" id="s-tasa-lbl">1.5%</span>
+          </div>
+          <input type="range" class="slider" id="s-tasa" min="0.3" max="5.0" step="0.1" value="1.5" oninput="simUpdate();saveSim()">
+          <div class="prog-labels"><span>0.3%</span><span>5.0%</span></div>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label">Tipo de crédito</label>
+          <select class="f-select" id="s-tipo" onchange="simUpdate();saveSim()">
+            <option value="consumo">Crédito de consumo</option>
+            <option value="hipotecario">Crédito hipotecario</option>
+            <option value="automotriz">Crédito automotriz</option>
+            <option value="tarjeta">Tarjeta de crédito</option>
+            <option value="educacion">Crédito de educación</option>
+          </select>
+        </div>
+
+        <hr class="divider" style="margin-top:.25rem">
+        <div class="sec-label">Tus ingresos</div>
+
+        <div class="f-group">
+          <label class="f-label" id="s-ingreso-lbl">Ingreso mensual neto ($)</label>
+          <input type="number" class="f-input" id="s-ingreso" value="900000" oninput="simUpdate();saveSim()">
+        </div>
+        <div class="f-group">
+          <label class="f-label" id="s-otras-lbl">Otras cuotas mensuales ($)</label>
+          <input type="number" class="f-input" id="s-otras" value="0" oninput="simUpdate();saveSim()">
+          <div class="f-hint">Si ya tienes otros créditos, inclúyelos aquí en la misma moneda.</div>
+        </div>
+        <!-- EDIT 5: Gastos operacionales para cálculo CAE -->
+        <div class="f-group">
+          <label class="f-label">Gastos operacionales y seguros / mes ($)
+            <span style="font-size:11px;font-weight:400;color:var(--muted)"> — para calcular CAE</span>
+          </label>
+          <input type="number" class="f-input" id="s-gastos-op" value="0" oninput="simUpdate();saveSim()" placeholder="Ej: 15000">
+          <div class="f-hint">Suma seguro de desgravamen, seguro incendio, gastos notariales mensualizados, etc.</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card mb1">
+        <div class="sec-label">Resultado de la simulación</div>
+        <div class="g2" style="gap:.75rem;margin-bottom:1rem">
+          <div style="background:var(--bg);border-radius:var(--r-md);padding:1rem;text-align:center">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Cuota mensual</div>
+            <div style="font-family:var(--ff-head);font-size:24px;font-weight:800;letter-spacing:-1px;color:var(--ink)" id="r-cuota">$0</div>
+          </div>
+          <div style="background:var(--bg);border-radius:var(--r-md);padding:1rem;text-align:center">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Total a pagar</div>
+            <div style="font-family:var(--ff-head);font-size:24px;font-weight:800;letter-spacing:-1px;color:var(--amber-500)" id="r-total">$0</div>
+          </div>
+          <div style="background:var(--bg);border-radius:var(--r-md);padding:1rem;text-align:center">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Intereses totales</div>
+            <div style="font-family:var(--ff-head);font-size:24px;font-weight:800;letter-spacing:-1px;color:var(--red-500)" id="r-inter">$0</div>
+          </div>
+          <div style="background:var(--bg);border-radius:var(--r-md);padding:1rem;text-align:center">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">% de ingresos</div>
+            <div style="font-family:var(--ff-head);font-size:24px;font-weight:800;letter-spacing:-1px" id="r-pct">0%</div>
+          </div>
+        </div>
+        <div class="f-label" style="margin-bottom:4px">Compromiso de ingresos</div>
+        <div class="prog-track" style="height:12px;margin-bottom:6px">
+          <div class="prog-fill" id="r-bar" style="width:0%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:.75rem">
+          <span>0%</span>
+          <span style="color:var(--green-600);font-weight:600">Límite recomendado: 35%</span>
+          <span>100%</span>
+        </div>
+        <div id="sim-result"></div>
+        <!-- EDIT 5: Resultado CAE -->
+        <div id="cae-result" style="margin-top:.75rem;display:none">
+          <div class="cae-result-strip">
+            <div class="cae-item">
+              <div class="cae-lbl">Cuota real (con gastos)</div>
+              <div class="cae-val" id="cae-cuota-real" style="color:var(--ink)">—</div>
+            </div>
+            <div class="cae-item">
+              <div class="cae-lbl">Tasa base anual</div>
+              <div class="cae-val" id="cae-tasa-base" style="color:var(--blue-600)">—</div>
+            </div>
+            <div class="cae-item">
+              <div class="cae-lbl">CAE real (%)</div>
+              <div class="cae-val" id="cae-anual" style="color:var(--red-500)">—</div>
+            </div>
+          </div>
+          <div id="cae-warn" style="display:none;margin-top:.75rem"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="sec-label">Comparativa de instituciones</div>
+        <table class="compare-table" id="compare-tbl"></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1.25rem">
+    <div class="sec-label">¿Por qué importa la tasa de interés?</div>
+    <div id="intereses-viz" style="margin-bottom:1rem"></div>
+    <div id="amort-msg" style="font-size:13.5px;color:var(--ink-3);line-height:1.7"></div>
+    <!-- PART 3 — INSIGHT 2: Costo de oportunidad -->
+    <div id="oportunidad-insight" style="margin-top:1rem;display:none"></div>
+  </div>
+
+  <!-- ================================================================
+       SIMULADOR DE DEUDAS: SNOWBALL vs AVALANCHA
+       ================================================================ -->
+  <div class="card" style="margin-top:1.25rem">
+    <div class="sim-tool-hdr">
+      <div>
+        <div class="sec-label" style="margin:0">Simulador de Deudas</div>
+        <div style="font-size:13px;color:var(--ink-3);margin-top:2px">Compara estrategia ❄️ Bola de Nieve vs 🏔️ Avalancha</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="addDebtRow()">+ Agregar deuda</button>
+    </div>
+
+    <div class="alert info" style="margin-bottom:1rem">
+      <span class="alert-icon">💡</span>
+      <div>Ingresa tus deudas y cuánto puedes pagar <strong>extra</strong> al mes. Te mostramos cuál estrategia te libera antes y con menos intereses totales.</div>
+    </div>
+
+    <div style="overflow-x:auto;margin-bottom:1rem">
+      <table class="debt-tbl">
+        <thead>
+          <tr>
+            <th>Nombre deuda</th>
+            <th>Saldo actual ($)</th>
+            <th>Tasa mensual (%)</th>
+            <th>Pago mínimo ($)</th>
+            <th style="width:36px"></th>
+          </tr>
+        </thead>
+        <tbody id="debt-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="f-group" style="max-width:360px;margin-bottom:1.25rem">
+      <label class="f-label">💰 Pago extra mensual disponible ($)</label>
+      <input type="number" class="f-input" id="debt-extra" value="80000" min="0"
+             onchange="debtUpdate();saveDebts()">
+      <div class="f-hint">Monto adicional sobre el mínimo de cada deuda. Al pagar una, ese dinero se redirige automáticamente a la siguiente.</div>
+    </div>
+
+    <div id="debt-empty" class="calc-empty-hint">Agrega al menos una deuda para ver la comparativa.</div>
+
+    <div id="debt-results" style="display:none">
+      <div class="g2" style="gap:.75rem;margin-bottom:1rem">
+        <div class="debt-strat-card" style="border-color:#3b82f6">
+          <div class="debt-strat-title" style="color:#3b82f6">❄️ Bola de Nieve</div>
+          <div class="debt-strat-sub">Paga primero la deuda más pequeña</div>
+          <div id="debt-snow-result">—</div>
+        </div>
+        <div class="debt-strat-card" style="border-color:var(--green-400)">
+          <div class="debt-strat-title" style="color:var(--green-600)">🏔️ Avalancha</div>
+          <div class="debt-strat-sub">Paga primero la de mayor tasa de interés</div>
+          <div id="debt-ava-result">—</div>
+        </div>
+      </div>
+      <div id="debt-winner" class="alert" style="display:none;margin-bottom:1rem"></div>
+      <div style="background:var(--bg);border-radius:var(--r-md);padding:1rem">
+        <div style="font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.6rem">📉 Evolución de la deuda total mes a mes</div>
+        <canvas id="debt-chart" height="190"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       COMPARADOR DE OFERTAS DE CRÉDITO
+       ================================================================ -->
+  <div class="card" style="margin-top:1.25rem">
+    <div class="sim-tool-hdr">
+      <div>
+        <div class="sec-label" style="margin:0">Comparador de Ofertas de Crédito</div>
+        <div style="font-size:13px;color:var(--ink-3);margin-top:2px">Ingresa las ofertas de distintos bancos y te decimos cuál conviene más</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="addOfertaRow()">+ Agregar oferta</button>
+    </div>
+
+    <div id="oferta-list" style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.25rem"></div>
+
+    <div id="oferta-empty" class="calc-empty-hint">Agrega al menos una oferta de crédito para comparar.</div>
+
+    <div id="oferta-explain" class="alert" style="display:none;margin-bottom:1rem"></div>
+
+    <div id="oferta-results" style="display:none;overflow-x:auto;margin-bottom:1.5rem">
+      <table class="oferta-cmp-tbl">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th style="text-align:left">Banco / Institución</th>
+            <th>Monto</th>
+            <th>Tasa/mes</th>
+            <th>Tasa anual</th>
+            <th>Plazo</th>
+            <th>Cuota/mes</th>
+            <th>Intereses</th>
+            <th>Comisión</th>
+            <th>Costo total</th>
+            <th>CAE aprox.</th>
+          </tr>
+        </thead>
+        <tbody id="oferta-tbl-body"></tbody>
+      </table>
+    </div>
+
+    <details class="tasas-ref-wrap">
+      <summary>📊 Tasas referenciales mercado chileno 2026</summary>
+      <div style="margin-top:.75rem;overflow-x:auto">
+        <table class="tasas-ref-tbl">
+          <thead>
+            <tr>
+              <th style="text-align:left">Institución</th>
+              <th>Tipo</th>
+              <th>Tasa mensual ref.</th>
+              <th>Tasa anual ref.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Banco Estado</td><td>Consumo</td><td>1.00% – 1.40%</td><td>12.7% – 18.2%</td></tr>
+            <tr><td>Banco de Chile</td><td>Consumo</td><td>1.15% – 1.55%</td><td>14.8% – 20.4%</td></tr>
+            <tr><td>Santander</td><td>Consumo</td><td>1.10% – 1.50%</td><td>14.0% – 19.6%</td></tr>
+            <tr><td>BCI / MACH</td><td>Consumo</td><td>1.05% – 1.45%</td><td>13.4% – 18.9%</td></tr>
+            <tr><td>Coopeuch</td><td>Cooperativa</td><td>0.85% – 1.25%</td><td>10.7% – 16.1%</td></tr>
+            <tr><td>Caja Los Andes</td><td>Compensación</td><td>1.10% – 1.70%</td><td>14.0% – 22.4%</td></tr>
+            <tr><td>Falabella / CMR</td><td>Retail</td><td>2.50% – 3.50%</td><td>34.5% – 51.1%</td></tr>
+            <tr><td>Ripley</td><td>Retail</td><td>2.30% – 3.20%</td><td>31.3% – 46.0%</td></tr>
+            <tr class="tmc-row"><td><strong>TMC — tope legal CMF</strong></td><td>Límite</td><td><strong>~3.2%</strong></td><td><strong>~46.4%</strong></td></tr>
+          </tbody>
+        </table>
+        <p class="tasas-ref-nota">⚠️ <strong>Tasas referenciales</strong> basadas en datos de mercado enero–mayo 2026. Las tasas reales dependen del monto, plazo e historial crediticio. Confirma siempre con la institución antes de firmar. Fuente: CMF Chile.</p>
+      </div>
+    </details>
+  </div>
+
+</section>
+
+<!-- ================================================================
+     PÁGINA 3: EDUCATIVA
+     ================================================================ -->
+<section class="page" id="page-educativa">
+  <div class="edu-hero">
+    <div class="edu-hero-emoji">🌱</div>
+    <div class="edu-hero-text">
+      <h2>Aprende y Crece</h2>
+      <p>Guías prácticas para mejorar tu salud financiera desde cero. Sin términos complicados. Solo información clara y útil.</p>
+    </div>
+  </div>
+
+  <!-- ── GLOSARIO FINANCIERO ── -->
+  <div class="glosario-wrap">
+    <div class="glosario-titulo">📖 Glosario Financiero Chileno</div>
+    <div class="glosario-sub">Busca cualquier término en lenguaje simple. Sin letra chica.</div>
+    <input
+      type="text"
+      class="glosario-input"
+      id="glosario-input"
+      placeholder="Busca: CAE, UF, APV, Interés compuesto, Inflación…"
+      oninput="buscarGlosario()"
+      autocomplete="off"
+    >
+    <div class="glosario-resultados" id="glosario-resultados"></div>
+  </div>
+
+  <div class="sec-label">Tips rápidos del día</div>
+  <div class="tips-row mb2">
+    <div class="tip-card"><div class="tip-emoji">💡</div><div class="tip-title">Regla 50/30/20</div><div class="tip-text">50% necesidades, 30% deseos, 20% ahorro. Una guía simple y poderosa.</div></div>
+    <div class="tip-card"><div class="tip-emoji">🚫</div><div class="tip-title">Evita el mínimo</div><div class="tip-text">Pagar solo el mínimo de tu tarjeta puede triplicar lo que debes en intereses.</div></div>
+    <div class="tip-card"><div class="tip-emoji">📅</div><div class="tip-title">Ahorra primero</div><div class="tip-text">Transfiérelo el mismo día de tu sueldo, antes de gastar nada.</div></div>
+    <div class="tip-card"><div class="tip-emoji">🎯</div><div class="tip-title">Metas SMART</div><div class="tip-text">Define metas específicas y con fecha: "Ahorrar $200.000 en 4 meses."</div></div>
+    <div class="tip-card"><div class="tip-emoji">📱</div><div class="tip-title">Activa alertas</div><div class="tip-text">Las notificaciones de tu banco reducen gastos impulsivos en un 20%.</div></div>
+    <div class="tip-card"><div class="tip-emoji">🔄</div><div class="tip-title">Revisar mensual</div><div class="tip-text">15 minutos al mes revisando tus gastos. Es el hábito más rentable.</div></div>
+  </div>
+
+  <div class="sec-label">Módulos de aprendizaje</div>
+  <!-- EDIT 4: Panel de badges obtenidos -->
+  <div class="badges-panel" id="badges-panel">
+    <span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Tus logros:</span>
+    <div id="badges-display" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+  </div>
+  <div class="g3 mb15">
+    <div class="topic-card" onclick="openModule('emergencias')">
+      <div class="topic-top" style="background:var(--green-50)">💰</div>
+      <div class="topic-body"><div class="topic-title">Fondo de emergencias</div><div class="topic-desc">El primer paso hacia la libertad financiera. Aprende cuánto necesitas y cómo construirlo.</div><span class="badge green">Básico</span></div>
+    </div>
+    <div class="topic-card" onclick="openModule('deudas')">
+      <div class="topic-top" style="background:var(--amber-50)">🏔️</div>
+      <div class="topic-body"><div class="topic-title">Cómo salir de deudas</div><div class="topic-desc">Método avalancha y bola de nieve explicados paso a paso.</div><span class="badge amber">Intermedio</span></div>
+    </div>
+    <div class="topic-card" onclick="openModule('inversion')">
+      <div class="topic-top" style="background:var(--blue-50)">📈</div>
+      <div class="topic-body"><div class="topic-title">Empieza a invertir</div><div class="topic-desc">Fondos mutuos, APV y más. Opciones seguras para principiantes.</div><span class="badge blue">Intermedio</span></div>
+    </div>
+    <div class="topic-card" onclick="openModule('tarjetas')">
+      <div class="topic-top" style="background:var(--red-50)">💳</div>
+      <div class="topic-body"><div class="topic-title">Tarjetas sin trampa</div><div class="topic-desc">Usa las tarjetas a tu favor sin caer en el ciclo de deuda.</div><span class="badge green">Básico</span></div>
+    </div>
+    <div class="topic-card" onclick="openModule('presupuesto_tip')">
+      <div class="topic-top" style="background:var(--green-100)">📊</div>
+      <div class="topic-body"><div class="topic-title">El arte del presupuesto</div><div class="topic-desc">Domina el método 50/30/20 y crea un presupuesto que dure más de un mes.</div><span class="badge green">Básico</span></div>
+    </div>
+    <div class="topic-card" onclick="openModule('habitos')">
+      <div class="topic-top" style="background:var(--amber-100)">🧠</div>
+      <div class="topic-body"><div class="topic-title">Hábitos que te hacen rico</div><div class="topic-desc">La psicología del dinero: por qué gastamos más de lo que queremos.</div><span class="badge amber">Avanzado</span></div>
+    </div>
+  </div>
+
+  <div class="module-panel" id="module-panel">
+    <div class="module-header">
+      <div class="module-emoji" id="mod-emoji"></div>
+      <div>
+        <div class="module-title" id="mod-title"></div>
+        <span id="mod-badge" class="badge"></span>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="closeModule()" style="margin-left:auto">✕ Cerrar</button>
+    </div>
+    <div id="mod-body"></div>
+    <!-- EDIT 4: Área de quiz -->
+    <div style="margin-top:1rem">
+      <button class="btn btn-primary btn-sm" id="quiz-start-btn" onclick="startQuiz()" style="display:none">
+        🎯 Hacer Test Rápido — ¡Gana un emblema!
+      </button>
+      <div id="quiz-container" style="display:none"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     PÁGINA 4: PRESUPUESTO MENSUAL
+     Contiene: FEATURE 2 (persistencia), FEATURE 4 (PDF)
+     ================================================================ -->
+<section class="page" id="page-presupuesto">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Plantilla de Presupuesto Mensual</h1>
+      <p class="page-sub">Registra tus gastos, compara con lo planeado y descubre cuánto puedes ahorrar.</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <select class="f-select" id="b-mes" style="width:auto;font-size:13px;padding:7px 12px" onchange="budgetCalc();saveAll()">
+        <option value="Enero">Enero 2026</option><option value="Febrero">Febrero 2026</option>
+        <option value="Marzo" selected>Marzo 2026</option><option value="Abril">Abril 2026</option>
+        <option value="Mayo">Mayo 2026</option><option value="Junio">Junio 2026</option>
+        <option value="Julio">Julio 2026</option><option value="Agosto">Agosto 2026</option>
+        <option value="Septiembre">Septiembre 2026</option><option value="Octubre">Octubre 2026</option>
+        <option value="Noviembre">Noviembre 2026</option><option value="Diciembre">Diciembre 2026</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="addBudgetRow()">+ Agregar gasto</button>
+      <!-- ============================================================
+           FEATURE 4: BOTÓN EXPORTAR A PDF
+           ============================================================ -->
+      <button class="btn btn-pdf btn-sm" onclick="exportPDF()">⬇ Descargar Reporte PDF</button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       FEATURE 1: SSOT — Ingresos y Deudas son la fuente de verdad
+       que alimenta el Dashboard automáticamente.
+       ============================================================ -->
+  <div class="card card-accent mb15">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:end;flex-wrap:wrap">
+      <div>
+        <div class="f-label">💰 Ingreso neto del mes ($)</div>
+        <input type="number" class="f-input" id="b-ingreso" value="900000"
+               oninput="budgetCalc();dashUpdate();saveAll()"
+               style="font-family:var(--ff-head);font-weight:700;font-size:16px;margin-top:4px">
+        <div class="f-hint">⟳ Fuente de datos para el Dashboard</div>
+      </div>
+      <div>
+        <div class="f-label">📉 Deudas vigentes totales ($)</div>
+        <input type="number" class="f-input" id="b-deuda" value="320000"
+               oninput="budgetCalc();dashUpdate();saveAll()"
+               style="font-family:var(--ff-head);font-weight:700;font-size:16px;margin-top:4px">
+        <div class="f-hint">⟳ Fuente de datos para el Dashboard</div>
+      </div>
+    </div>
+    <hr class="divider">
+    <div class="f-label" style="margin-bottom:4px">Tasa de gasto sobre ingresos</div>
+    <div class="prog-track" style="height:10px;margin:6px 0">
+      <div class="prog-fill" id="b-rate-bar" style="width:0%"></div>
+    </div>
+    <div id="b-rate-text" style="font-size:12.5px;color:var(--muted)"></div>
+  </div>
+
+  <div class="budget-summary mb15">
+    <div class="b-sum-card">
+      <div class="b-sum-lbl">Presupuestado</div>
+      <div class="b-sum-val" id="b-tot-presup" style="color:var(--green-600)">$0</div>
+    </div>
+    <div class="b-sum-card">
+      <div class="b-sum-lbl">Gastado real</div>
+      <div class="b-sum-val" id="b-tot-real" style="color:var(--red-500)">$0</div>
+    </div>
+    <div class="b-sum-card">
+      <div class="b-sum-lbl">Diferencia</div>
+      <div class="b-sum-val" id="b-diferencia">$0</div>
+    </div>
+    <div class="b-sum-card">
+      <div class="b-sum-lbl">Ahorro potencial</div>
+      <div class="b-sum-val" id="b-ahorro-card" style="color:var(--blue-600)">$0</div>
+    </div>
+  </div>
+
+  <div class="card mb15" style="overflow-x:auto">
+    <table class="budget-table" id="budget-tbl">
+      <thead>
+        <tr>
+          <th>Categoría</th>
+          <th>Descripción</th>
+          <th style="text-align:right">Presupuestado ($)</th>
+          <th style="text-align:right">Real ($)</th>
+          <th style="text-align:right">Diferencia</th>
+          <th style="width:40px"></th>
+        </tr>
+      </thead>
+      <tbody id="budget-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="sec-label">Ejecución por categoría</div>
+      <div id="b-bars"></div>
+    </div>
+    <div>
+      <div class="saving-meter">
+        <div>
+          <h3>Potencial de ahorro</h3>
+          <p>Lo que te queda disponible este mes</p>
+        </div>
+        <div style="text-align:right">
+          <div class="saving-big" id="b-ahorro">$0</div>
+          <div class="saving-label" id="b-ahorro-pct"></div>
+        </div>
+      </div>
+      <div id="b-consejo" class="alert success" style="margin-top:1rem;display:none"></div>
+      <!-- PART 3 — INSIGHT 4: Gasto Hormiga (Entretención + Otros > 15% ingresos) -->
+      <div id="b-hormiga-insight" style="margin-top:.75rem;display:none"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       FEAT E: CALENDARIO DE VENCIMIENTOS
+       Lista interactiva de cuentas por pagar con checkbox y localStorage
+       ============================================================ -->
+  <div class="card" style="margin-top:1.5rem">
+    <div class="venc-header">
+      <div>
+        <div style="font-family:var(--ff-head);font-size:17px;font-weight:700">📅 Calendario de Vencimientos</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:2px">Marca las cuentas pagadas. Los datos se guardan automáticamente.</div>
+      </div>
+    </div>
+
+    <!-- Formulario para agregar vencimiento -->
+    <div class="venc-form">
+      <div class="f-group" style="margin-bottom:0">
+        <label class="f-label">Nombre de la cuenta</label>
+        <input class="f-input" id="venc-nombre-in" placeholder="Ej: Luz, Agua, Arriendo…" style="padding:8px 12px">
+      </div>
+      <div class="f-group" style="margin-bottom:0">
+        <label class="f-label">Monto ($)</label>
+        <input class="f-input" type="number" id="venc-monto-in" placeholder="35000" style="padding:8px 12px">
+      </div>
+      <div class="f-group" style="margin-bottom:0">
+        <label class="f-label">Día del mes</label>
+        <input class="f-input" type="number" id="venc-dia-in" min="1" max="31" placeholder="15" style="padding:8px 12px;width:80px">
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="addVenc()" style="align-self:flex-end;margin-bottom:2px">+ Agregar</button>
+    </div>
+
+    <!-- Lista de vencimientos -->
+    <div class="venc-list" id="venc-list" style="margin-top:.75rem"></div>
+
+    <!-- Totales -->
+    <div class="venc-total-strip" id="venc-totals" style="display:none">
+      <span id="venc-summary-text" style="color:var(--green-700);font-weight:500"></span>
+      <span style="font-family:var(--ff-head);font-size:15px;font-weight:700;color:var(--green-600)" id="venc-total-val"></span>
+    </div>
+  </div>
+
+</section>
+
+<!-- ================================================================
+     PÁGINA 5: INVERSIONES & APV
+     FEAT B: Calculadora de interés compuesto con bonificación APV Chile
+     ================================================================ -->
+<section class="page" id="page-inversiones">
+
+  <!-- ═══ ENCABEZADO ═══ -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Inversiones &amp; APV</h1>
+      <p class="page-sub">Calcula cómo crece tu dinero y proyecta tu jubilación.</p>
+    </div>
+    <span class="badge green">📈 Interés compuesto</span>
+  </div>
+
+  <!-- ═══ SUB-NAVEGACIÓN (TABS) ═══ -->
+  <div class="inv-tabs" id="inv-tabs">
+    <button class="inv-tab active" id="tab-btn-libre" onclick="switchInvTab('libre')">
+      🎯 Metas Libres
+    </button>
+    <button class="inv-tab" id="tab-btn-jubilacion" onclick="switchInvTab('jubilacion')">
+      🏛️ Mi Jubilación
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       TAB 1: METAS LIBRES
+       ══════════════════════════════════════════════════════ -->
+  <div id="inv-panel-libre">
+    <div class="g2">
+
+      <!-- Inputs -->
+      <div class="card">
+        <div class="sec-label">Parámetros de inversión</div>
+
+        <div class="f-group">
+          <label class="f-label">Ahorro mensual ($)</label>
+          <input type="number" class="f-input" id="inv-mensual" value="50000" oninput="invLibreUpdate()">
+        </div>
+
+        <div class="f-group">
+          <label class="f-label">Tasa de interés anual (%)</label>
+          <div class="quick-rate-group">
+            <button class="quick-rate-btn" onclick="setInvTasa(5,this)">📦 DAP (5%)</button>
+            <button class="quick-rate-btn" onclick="setInvTasa(7,this)">📊 F. Mutuo (7%)</button>
+            <button class="quick-rate-btn" onclick="setInvTasa(10,this)">🚀 S&amp;P 500 (10%)</button>
+          </div>
+          <input type="number" class="f-input" id="inv-tasa" value="6" step="0.5" oninput="invLibreUpdate()">
+          <div class="f-hint">Referencia: fondos mutuos ~4–7% anual · S&amp;P 500 histórico ~10%.</div>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label">Plazo de inversión</label>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+            <input type="range" class="slider" id="inv-anos" min="1" max="40" value="20" oninput="invLibreUpdate()">
+            <span style="font-family:var(--ff-head);font-size:17px;font-weight:700;color:var(--green-600);min-width:70px" id="inv-anos-lbl">20 años</span>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- APV Régimen A -->
+        <label class="apv-checkbox-row" for="inv-apv">
+          <input type="checkbox" id="inv-apv" onchange="invLibreUpdate()">
+          <div>
+            <div class="apv-checkbox-label">Activar APV Régimen A <span class="apv-bonus-chip">+15% Estado</span></div>
+            <div class="apv-checkbox-desc">El Estado bonifica el 15% de lo ahorrado (tope 6 UTM/año).</div>
+          </div>
+        </label>
+        <div id="apv-info" style="display:none;margin-top:.75rem">
+          <div class="emp-info-row">
+            ℹ️ <span>Bono estatal máximo: <strong id="apv-bono-max"></strong>/año (Régimen A).</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resultados -->
+      <div>
+        <div class="card mb1">
+          <div class="sec-label">Resultado al plazo elegido</div>
+          <div class="inv-result-grid">
+            <div class="inv-result-box">
+              <div class="irb-lbl">Bajo el colchón</div>
+              <div class="irb-val" id="inv-r-colchon" style="color:var(--muted)">$0</div>
+            </div>
+            <div class="inv-result-box">
+              <div class="irb-lbl">Invertido</div>
+              <div class="irb-val irb-col2" id="inv-r-tradicional">$0</div>
+            </div>
+            <div class="inv-result-box">
+              <div class="irb-lbl">Con APV (Régimen A)</div>
+              <div class="irb-val irb-col" id="inv-r-apv">$0</div>
+            </div>
+            <div class="inv-result-box">
+              <div class="irb-lbl">Lo que aportaste</div>
+              <div class="irb-val" id="inv-r-aporte" style="color:var(--ink-2)">$0</div>
+            </div>
+            <div class="inv-result-box">
+              <div class="irb-lbl">Ganancia generada</div>
+              <div class="irb-val irb-col2" id="inv-r-ganancia">$0</div>
+            </div>
+            <div class="inv-result-box">
+              <div class="irb-lbl">Bono APV acumulado</div>
+              <div class="irb-val irb-col" id="inv-r-bonoTotal">$0</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="sec-label">Proyección comparada</div>
+          <div style="position:relative;height:280px;width:100%">
+            <canvas id="inv-chart-libre"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- fin panel libre -->
+
+  <!-- ══════════════════════════════════════════════════════
+       TAB 2: MI JUBILACIÓN (AFP + APV)
+       ══════════════════════════════════════════════════════ -->
+  <div id="inv-panel-jubilacion" style="display:none">
+    <div class="g2">
+
+      <!-- Inputs jubilación -->
+      <div class="card">
+        <div class="sec-label">Datos para tu jubilación</div>
+
+        <div class="g2" style="gap:.75rem">
+          <div class="f-group" style="margin-bottom:0">
+            <label class="f-label">Edad actual</label>
+            <input type="number" class="f-input" id="jub-edad" value="30" min="18" max="64" oninput="invJubUpdate()">
+          </div>
+          <div class="f-group" style="margin-bottom:0">
+            <label class="f-label">Edad de jubilación</label>
+            <select class="f-select" id="jub-edad-ret" onchange="invJubUpdate()">
+              <option value="60">60 años</option>
+              <option value="65" selected>65 años</option>
+            </select>
+          </div>
+        </div>
+        <div class="f-hint" style="margin:6px 0 1rem">
+          Años restantes para jubilarte: <strong id="jub-anos-rest" style="color:var(--green-600)">35</strong>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label">Sueldo imponible mensual ($)</label>
+          <input type="number" class="f-input" id="jub-sueldo" value="900000" oninput="invJubUpdate()">
+          <div class="f-hint">AFP descuenta el 10% obligatorio de este monto.</div>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label">Saldo actual en tu AFP ($)</label>
+          <input type="number" class="f-input" id="jub-saldo" value="5000000" oninput="invJubUpdate()">
+          <div class="f-hint">Lo encuentras en <strong>Mi AFP</strong> o en tu estado de cuenta.</div>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label">Aporte APV mensual extra ($)</label>
+          <input type="number" class="f-input" id="jub-apv" value="50000" oninput="invJubUpdate()">
+          <div class="f-hint">El Estado bonifica el 15% de lo aportado (tope 6 UTM/año).</div>
+        </div>
+
+        <div class="f-group">
+          <label class="f-label">Rentabilidad AFP anual estimada (%)</label>
+          <input type="number" class="f-input" id="jub-tasa" value="5" step="0.5" oninput="invJubUpdate()">
+          <div class="f-hint">Histórico Fondo C: ~4–6% anual real.</div>
+        </div>
+      </div>
+
+      <!-- Resultados jubilación -->
+      <div>
+        <div class="card mb1">
+          <div class="sec-label">Proyección al jubilarte</div>
+          <div class="inv-result-grid">
+            <div class="inv-result-box">
+              <div class="irb-lbl">Fondo AFP obligatorio</div>
+              <div class="irb-val" id="jub-r-afp" style="color:var(--amber-500)">—</div>
+            </div>
+            <div class="inv-result-box">
+              <div class="irb-lbl">Fondo APV acumulado</div>
+              <div class="irb-val irb-col" id="jub-r-apv">—</div>
+            </div>
+            <div class="inv-result-box">
+              <div class="irb-lbl">Fondo total al jubilar</div>
+              <div class="irb-val" id="jub-r-total" style="color:var(--ink)">—</div>
+            </div>
+            <div class="inv-result-box">
+              <div class="irb-lbl">Bono APV acumulado</div>
+              <div class="irb-val irb-col" id="jub-r-bono">—</div>
+            </div>
+            <div class="inv-result-box" style="grid-column:span 2">
+              <div class="irb-lbl">Pensión estimada /mes <span style="font-size:10px;font-weight:400;color:var(--muted)">(fondo ÷ 240)</span></div>
+              <div class="irb-val" id="jub-r-pension" style="color:var(--green-600);font-size:22px">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="sec-label">Crecimiento de tu fondo año a año</div>
+          <div style="position:relative;height:280px;width:100%">
+            <canvas id="inv-chart-jubilacion"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- fin panel jubilación -->
+
+</section>
+
+<!-- ================================================================
+     PÁGINA 6: COMPARADOR AUTOMOTRIZ
+     FEAT C: Crédito tradicional vs Compra Inteligente (cuotón final)
+     ================================================================ -->
+<section class="page" id="page-autos">
+
+  <div class="auto-header-strip">
+    <div class="auto-header-emoji">🚗</div>
+    <div class="auto-header-text">
+      <h2>Comparador Automotriz Inteligente</h2>
+      <p>Compara el crédito tradicional con la "Compra Inteligente" (cuotón final) y descubre cuál te cuesta más a largo plazo.</p>
+    </div>
+  </div>
+
+  <!-- Inputs compartidos -->
+  <div class="card mb15">
+    <div class="sec-label">Datos del vehículo</div>
+    <div class="g2" style="gap:1rem">
+      <div class="f-group" style="margin-bottom:0">
+        <label class="f-label">Valor del vehículo ($) <span style="font-size:11px;color:var(--muted);font-weight:400">— ej: Hyundai Tucson 2024</span></label>
+        <input type="number" class="f-input" id="aut-valor" value="18500000" oninput="autosUpdate()">
+      </div>
+      <div class="f-group" style="margin-bottom:0">
+        <label class="f-label">Pie inicial (%)</label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="range" class="slider" id="aut-pie-pct" min="0" max="50" step="5" value="20" oninput="autosUpdate()">
+          <span style="font-family:var(--ff-head);font-size:16px;font-weight:700;color:var(--green-600);min-width:45px" id="aut-pie-lbl">20%</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Pie = <strong id="aut-pie-val">$3.700.000</strong> · Monto a financiar: <strong id="aut-fin-val">$14.800.000</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- Crédito Tradicional -->
+    <div class="card">
+      <div class="auto-col-head traditional">💳 Crédito Tradicional</div>
+      <div class="f-group">
+        <label class="f-label">Plazo (meses)</label>
+        <input type="number" class="f-input" id="aut-t-plazo" value="60" oninput="autosUpdate()">
+      </div>
+      <div class="f-group">
+        <label class="f-label">Tasa mensual (%)</label>
+        <input type="number" class="f-input" id="aut-t-tasa" value="0.8" step="0.1" oninput="autosUpdate()">
+        <div class="f-hint">Hyundai Financial: ~0.8% mensual referencial</div>
+      </div>
+      <hr class="divider">
+      <div id="aut-t-results">
+        <div class="auto-compare-row"><span class="auto-compare-lbl">Cuota mensual</span><span class="auto-compare-val" id="aut-t-cuota">—</span></div>
+        <div class="auto-compare-row"><span class="auto-compare-lbl">Total a pagar</span><span class="auto-compare-val" id="aut-t-total">—</span></div>
+        <div class="auto-compare-row"><span class="auto-compare-lbl">Total intereses</span><span class="auto-compare-val" id="aut-t-inter" style="color:var(--red-500)">—</span></div>
+      </div>
+    </div>
+
+    <!-- Compra Inteligente -->
+    <div class="card">
+      <div class="auto-col-head smart">✅ Compra Inteligente (cuotón final)</div>
+      <div class="f-group">
+        <label class="f-label">Plazo (meses)</label>
+        <input type="number" class="f-input" id="aut-s-plazo" value="48" oninput="autosUpdate()">
+      </div>
+      <div class="f-group">
+        <label class="f-label">Tasa mensual (%)</label>
+        <input type="number" class="f-input" id="aut-s-tasa" value="0.75" step="0.1" oninput="autosUpdate()">
+      </div>
+      <div class="f-group">
+        <label class="f-label">Valor Futuro Garantizado / Cuotón final ($)</label>
+        <input type="number" class="f-input" id="aut-s-cuoton" value="5000000" oninput="autosUpdate()">
+        <div class="f-hint">Hyundai Tucson 2024: cuotón referencial ~$5.000.000</div>
+      </div>
+      <hr class="divider">
+      <div id="aut-s-results">
+        <div class="auto-compare-row"><span class="auto-compare-lbl">Cuota mensual</span><span class="auto-compare-val" id="aut-s-cuota">—</span></div>
+        <div class="auto-compare-row"><span class="auto-compare-lbl">Total a pagar (con cuotón)</span><span class="auto-compare-val" id="aut-s-total">—</span></div>
+        <div class="auto-compare-row"><span class="auto-compare-lbl">Total intereses</span><span class="auto-compare-val" id="aut-s-inter" style="color:var(--red-500)">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Veredicto -->
+  <div id="aut-winner" class="auto-winner better" style="margin-top:1.25rem">
+    <div class="auto-winner-icon">⏳</div>
+    <div>
+      <div class="auto-winner-title">Calculando…</div>
+      <div style="font-size:13px;color:var(--muted)">Ingresa los datos para ver el análisis.</div>
+    </div>
+  </div>
+
+  <!-- PART 3 — INSIGHT 3: Gastos fijos de tener auto -->
+  <div class="alert warning" style="margin-top:1rem">
+    <span class="alert-icon">⚠️</span>
+    <div><strong>Recuerda:</strong> Tener auto implica gastos fijos adicionales que no aparecen en la cuota. Considera: bencina (~$80.000–$120.000/mes), seguro obligatorio (SOAP + seguro complementario ~$30.000–$50.000/mes), mantención, TAG/peajes (ej. Ruta 160, Puente Bicentenario ~$15.000–$30.000/mes) y revisión técnica. <strong>Añade ~$150.000–$200.000/mes a tu presupuesto</strong> para validar si el auto es realmente viable.</div>
+  </div>
+
+  <!-- Gráfico comparativo -->
+  <div class="card" style="margin-top:1.25rem">
+    <div class="sec-label">Comparativa de intereses totales</div>
+    <div style="height:200px;position:relative"><canvas id="aut-chart"></canvas></div>
+  </div>
+</section>
+
+<!-- ================================================================
+     PÁGINA 7: EMPRENDEDORES / FREELANCERS
+     FEAT D: Calculadora SII Boletas + Calculadora IVA E-commerce
+     ================================================================ -->
+<section class="page" id="page-emprendedores">
+
+  <div class="emp-hero">
+    <div class="emp-hero-emoji">🚀</div>
+    <div class="emp-hero-text">
+      <h2>Herramientas para Emprendedores & Freelancers</h2>
+      <p>Calculadoras rápidas para el día a día de quienes trabajan por cuenta propia. Calcula tus honorarios, IVA y márgenes de forma simple.</p>
+    </div>
+  </div>
+
+  <div class="g2">
+
+    <!-- Calculadora SII Boletas de Honorarios -->
+    <div class="emp-tool-card">
+      <div class="emp-tool-title">🧾 Calculadora SII — Boletas de Honorarios</div>
+      <div class="emp-tool-sub">¿Cuánto debes cobrar para recibir el líquido que necesitas? La retención de honorarios 2026 es del <strong>14,5%</strong>.</div>
+
+      <div class="f-group">
+        <label class="f-label">Sueldo líquido deseado ($)</label>
+        <input type="number" class="f-input" id="sii-liquido" value="800000" oninput="siiCalc()">
+        <div class="f-hint">Lo que quieres recibir en tu cuenta bancaria.</div>
+      </div>
+      <button class="btn btn-primary btn-sm btn-full" onclick="siiCalc()">Calcular monto bruto</button>
+
+      <div class="emp-result-strip" id="sii-results">
+        <div class="emp-res-item">
+          <div class="emp-res-lbl">Monto bruto a cobrar</div>
+          <div class="emp-res-val green" id="sii-bruto">—</div>
+        </div>
+        <div class="emp-res-item">
+          <div class="emp-res-lbl">Retención SII (14,5%)</div>
+          <div class="emp-res-val amber" id="sii-retencion">—</div>
+        </div>
+        <div class="emp-res-item">
+          <div class="emp-res-lbl">Líquido a recibir</div>
+          <div class="emp-res-val blue" id="sii-liquido-out">—</div>
+        </div>
+        <div class="emp-res-item">
+          <div class="emp-res-lbl">Diferencia</div>
+          <div class="emp-res-val" id="sii-diff" style="color:var(--muted)">—</div>
+        </div>
+      </div>
+
+      <div class="emp-info-row" style="margin-top:.9rem">
+        ℹ️ <span>Fórmula: Bruto = Líquido / (1 − 0,145). La retención del <strong>14,5%</strong> (tasa legal 2026) la paga el emisor de la boleta al SII. Tú recibes el líquido.</span>
+      </div>
+    </div>
+
+    <!-- Calculadora IVA E-commerce -->
+    <div class="emp-tool-card">
+      <div class="emp-tool-title">🛒 Calculadora IVA — E-commerce & Dropshipping</div>
+      <div class="emp-tool-sub">Desglose real de costos para ventas online: incluye IVA (19%), pasarela de pago y margen neto real.</div>
+
+      <div class="f-group">
+        <label class="f-label">Costo del producto ($) — precio que pagas tú</label>
+        <input type="number" class="f-input" id="iva-neto" value="25000" oninput="ivaCalc()">
+        <div class="f-hint">Precio sin IVA que te cobra tu proveedor o costo directo.</div>
+      </div>
+      <div class="f-group">
+        <label class="f-label">Tarifa pasarela de pago (%) — ej: Shopify/Stripe/Transbank</label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="range" class="slider" id="iva-pasarela" min="0.5" max="5" step="0.5" value="2" oninput="ivaCalc()">
+          <span style="font-family:var(--ff-head);font-size:16px;font-weight:700;color:var(--blue-600);min-width:40px" id="iva-pasarela-lbl">2%</span>
+        </div>
+        <div class="f-hint">Shopify Payments: ~2,0% · Stripe: ~2,9% · Transbank WebPay Plus: ~1,99%</div>
+      </div>
+      <div class="f-group">
+        <label class="f-label">Margen de ganancia deseado (%)</label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="range" class="slider" id="iva-margen" min="5" max="200" step="5" value="40" oninput="ivaCalc()">
+          <span style="font-family:var(--ff-head);font-size:16px;font-weight:700;color:var(--green-600);min-width:50px" id="iva-margen-lbl">40%</span>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm btn-full" onclick="ivaCalc()">Calcular precio de venta</button>
+
+      <div class="emp-result-strip" id="iva-results" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="emp-res-item">
+          <div class="emp-res-lbl">Precio neto + margen</div>
+          <div class="emp-res-val blue" id="iva-con-margen">—</div>
+        </div>
+        <div class="emp-res-item">
+          <div class="emp-res-lbl">IVA (19%)</div>
+          <div class="emp-res-val amber" id="iva-monto">—</div>
+        </div>
+        <div class="emp-res-item">
+          <div class="emp-res-lbl">Precio final al cliente</div>
+          <div class="emp-res-val green" id="iva-total">—</div>
+        </div>
+        <div class="emp-res-item">
+          <div class="emp-res-lbl">Costo pasarela</div>
+          <div class="emp-res-val" id="iva-pasarela-costo" style="color:var(--red-500)">—</div>
+        </div>
+        <div class="emp-res-item">
+          <div class="emp-res-lbl">Tu ganancia NETA real</div>
+          <div class="emp-res-val" id="iva-ganancia" style="color:var(--green-600)">—</div>
+        </div>
+        <div class="emp-res-item">
+          <div class="emp-res-lbl">Margen real s/ precio</div>
+          <div class="emp-res-val" id="iva-margen-real" style="color:var(--amber-500)">—</div>
+        </div>
+      </div>
+      <!-- PART 3 — INSIGHT 5: "El IVA no es tuyo" -->
+      <div id="iva-insight" style="display:none;margin-top:.75rem"></div>
+      <div class="emp-info-row">
+        ℹ️ <span>El IVA se aplica sobre el precio con margen. El cliente lo paga; tú lo retienes y declaras al SII. La pasarela cobra sobre el precio total (con IVA incluido).</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- EDIT 7: CALCULADORA DE IMPORTACIONES -->
+  <div class="import-section">
+    <div class="import-title">📦 Importaciones &amp; Dropshipping Internacional
+      <span class="import-live-chip">⟳ USD en vivo</span>
+    </div>
+    <div class="import-subtitle">Calcula el costo real de importar desde el extranjero. Arancel (6% del valor CIF) + IVA chileno (19% sobre valor CIF + arancel).</div>
+    <div class="g2" style="gap:1rem;margin-bottom:1rem">
+      <div class="f-group" style="margin-bottom:0">
+        <label class="f-label">Valor del producto (USD)</label>
+        <input type="number" class="f-input" id="imp-valor-usd" value="100" oninput="importCalc()">
+        <div class="f-hint">Precio FOB del proveedor (sin flete).</div>
+      </div>
+      <div class="f-group" style="margin-bottom:0">
+        <label class="f-label">Costo de envío (USD)</label>
+        <input type="number" class="f-input" id="imp-flete-usd" value="25" oninput="importCalc()">
+        <div class="f-hint">Courier o flete internacional hasta Chile.</div>
+      </div>
+    </div>
+    <div class="f-hint" style="margin-bottom:1rem">
+      Tipo de cambio USD: <strong>$<span id="imp-tc-val">cargando…</span></strong>
+      <span style="color:var(--muted);font-size:11px;margin-left:4px">(desde mindicador.cl)</span>
+    </div>
+    <div id="imp-steps"></div>
+    <div id="imp-insight" style="display:none;margin-top:.75rem"></div>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     FEATURE 4: ÁREA OCULTA PARA PDF — se construye dinámicamente
+     ============================================================ -->
+<div id="pdf-area"></div>
+
+
+<!-- ================================================================
+     PÁGINA 8: ACERCA DE
+     Equipo, metodología, stats del proyecto y QR para defensa
+     ================================================================ -->
+<section class="page" id="page-about">
+
+  <div class="about-hero">
+    <h1>Acerca del Proyecto</h1>
+    <p>Salud Financiera es una plataforma desarrollada como proyecto ABP interdisciplinario en The Almondale School Valle por estudiantes de 4to Medio.</p>
+  </div>
+
+  <!-- Stats del proyecto -->
+  <div class="about-stats">
+    <div class="about-stat">
+      <div class="about-stat-num">7</div>
+      <div class="about-stat-lbl">Módulos funcionales</div>
+    </div>
+    <div class="about-stat">
+      <div class="about-stat-num">12</div>
+      <div class="about-stat-lbl">Semanas de desarrollo</div>
+    </div>
+    <div class="about-stat">
+      <div class="about-stat-num">25+</div>
+      <div class="about-stat-lbl">Términos en glosario</div>
+    </div>
+    <div class="about-stat">
+      <div class="about-stat-num">100%</div>
+      <div class="about-stat-lbl">Privado y local</div>
+    </div>
+  </div>
+
+  <!-- Equipo -->
+  <div class="sec-label" style="margin-bottom:1rem">Nuestro Equipo</div>
+  <div class="team-grid">
+    <div class="team-card">
+      <div class="team-avatar green">MV</div>
+      <div class="team-name">Martín Vergara</div>
+      <div class="team-role">Arquitecto Web & Programador</div>
+      <div class="team-desc">Diseñó y programó el MVP completo. Implementó los 7 módulos, el Score Financiero, la exportación PDF, la integración con APIs en vivo y todas las interacciones.</div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar blue">TC</div>
+      <div class="team-name">Tomás Arriagada</div>
+      <div class="team-role">Redactor Principal</div>
+      <div class="team-desc">Estructuró y redactó el informe bajo normas APA 7, asegurando coherencia argumentativa y cobertura completa de todos los items evaluativos.</div>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar amber">MT</div>
+      <div class="team-name">Matías Toloza</div>
+      <div class="team-role">Investigador Teórico</div>
+      <div class="team-desc">Lideró la búsqueda y selección de fuentes oficiales (CMF, Banco Central, SERNAC, SII, OCDE) para fundamentar el marco teórico del proyecto.</div>
+    </div>
+  </div>
+
+  <!-- Sección QR -->
+  <div class="qr-section">
+    <div class="qr-box" id="qr-box">
+      <div style="font-size:11px;color:#999;text-align:center">Cargando QR…</div>
+    </div>
+    <div class="qr-text">
+      <h3>Escanea para abrir en tu celular 📱</h3>
+      <p>Esta plataforma está optimizada para uso móvil. Escanea el código QR con tu celular y úsala donde sea. También puedes <strong>instalarla como aplicación</strong> tocando "Agregar a pantalla de inicio" en el menú del navegador.</p>
+      <button class="btn btn-share" onclick="SF_FEATURES.shareReport()" style="margin-top:1rem">
+        <span>📤</span> Compartir enlace
+      </button>
+    </div>
+  </div>
+
+  <!-- Tecnologías usadas -->
+  <div class="card mb15">
+    <div class="sec-label">Tecnologías utilizadas</div>
+    <p style="font-size:13.5px;color:var(--ink-3);line-height:1.7;margin-bottom:.75rem">
+      Esta plataforma fue construida con tecnologías web estándar, sin frameworks pesados ni dependencias innecesarias. Todo el código es ejecutado localmente en tu navegador, garantizando privacidad total.
+    </p>
+    <div class="tech-stack">
+      <span class="tech-chip">HTML5</span>
+      <span class="tech-chip">CSS3</span>
+      <span class="tech-chip">JavaScript ES6+</span>
+      <span class="tech-chip">Chart.js</span>
+      <span class="tech-chip">html2pdf.js</span>
+      <span class="tech-chip">PWA (Service Worker)</span>
+      <span class="tech-chip">localStorage</span>
+      <span class="tech-chip">mindicador.cl API</span>
+    </div>
+  </div>
+
+  <!-- Fuentes -->
+  <div class="card mb15">
+    <div class="sec-label">Fuentes oficiales consultadas</div>
+    <ul style="margin:0;padding-left:1.25rem;font-size:13.5px;color:var(--ink-3);line-height:1.9">
+      <li>Comisión para el Mercado Financiero (CMF) — Guías de educación financiera</li>
+      <li>Banco Central de Chile — Informes de estabilidad financiera</li>
+      <li>SERNAC — Reportes anuales de reclamos financieros</li>
+      <li>Servicio de Impuestos Internos (SII) — Tablas de retención 2026</li>
+      <li>Superintendencia de Pensiones — Datos del sistema AFP y APV</li>
+      <li>OCDE — PISA Financial Literacy 2022</li>
+      <li>mindicador.cl — Indicadores económicos en tiempo real</li>
+    </ul>
+  </div>
+
+  <!-- Reset data section -->
+  <div class="card mb15" style="border-color:#fca5a5;background:var(--red-50)">
+    <div class="sec-label" style="color:var(--red-500)">Zona de privacidad</div>
+    <p style="font-size:13.5px;color:var(--ink-3);line-height:1.6;margin-bottom:.75rem">
+      Todos tus datos se guardan únicamente en este dispositivo. No se envía ninguna información a servidores externos. Si quieres borrar todo y empezar desde cero, puedes hacerlo aquí.
+    </p>
+    <button class="btn" style="background:var(--red-500);color:#fff;border:none" onclick="SF_FEATURES.resetAllData()">
+      🗑️ Borrar todos mis datos
+    </button>
+  </div>
+</section>
+
+</main>
+
+<!-- ================================================================
+     MEJORA 5: TOUR OVERLAY
+     ================================================================ -->
+<div class="tour-overlay" id="tour-overlay" data-html2canvas-ignore="true" onclick="if(event.target===this)closeTour()">
+  <div class="tour-tooltip" id="tour-tooltip">
+    <div class="tour-header">
+      <span class="tour-counter" id="tour-counter">1 / 4</span>
+      <button class="tour-close" onclick="closeTour()" aria-label="Cerrar tour">✕</button>
+    </div>
+    <div class="tour-title" id="tour-title"></div>
+    <div class="tour-desc" id="tour-desc"></div>
+    <div class="tour-actions">
+      <button class="btn btn-sm btn-outline" id="tour-prev" onclick="tourPrev()" style="display:none">← Anterior</button>
+      <button class="btn btn-sm btn-primary" id="tour-next" onclick="tourNext()">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MODAL: PERFIL (login simulado)
+     ================================================================ -->
+<div class="modal-backdrop" id="profile-modal" onclick="if(event.target===this)SF_FEATURES.closeProfileModal()">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-avatar-big" id="profile-modal-avatar">?</div>
+      <div>
+        <div class="modal-title" id="profile-modal-name">Mi Perfil</div>
+        <div class="modal-sub" id="profile-modal-meta">—</div>
+      </div>
+      <button class="modal-close" onclick="SF_FEATURES.closeProfileModal()" aria-label="Cerrar">✕</button>
+    </div>
+    <p style="font-size:13.5px;color:var(--ink-3);line-height:1.6;margin-bottom:.5rem">
+      Tu información se guarda solo en este dispositivo. Nunca se envía a ningún servidor. Esto es solo para personalizar tu experiencia.
+    </p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="SF_FEATURES.logoutProfile()">Cerrar sesión</button>
+      <button class="btn btn-primary" onclick="SF_FEATURES.closeProfileModal()">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Crear perfil -->
+<div class="modal-backdrop" id="profile-setup-modal" onclick="if(event.target===this)SF_FEATURES.closeProfileModal()">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-avatar-big">👋</div>
+      <div>
+        <div class="modal-title">¡Hola! ¿Cómo te llamas?</div>
+        <div class="modal-sub">Es solo para personalizar tu experiencia</div>
+      </div>
+    </div>
+    <div class="f-group">
+      <label class="f-label">Tu nombre</label>
+      <input type="text" class="f-input" id="profile-name-input" placeholder="Ej: Martín Vergara" maxlength="40" onkeypress="if(event.key==='Enter')SF_FEATURES.submitProfileSetup()">
+      <div class="f-hint">Esto solo se guarda en tu navegador. Tu privacidad está protegida.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="SF_FEATURES.closeProfileModal()">Después</button>
+      <button class="btn btn-primary" onclick="SF_FEATURES.submitProfileSetup()">Comenzar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     PWA INSTALL BANNER
+     ================================================================ -->
+<div class="pwa-banner" id="pwa-banner">
+  <div class="pwa-banner-icon">📲</div>
+  <div class="pwa-banner-text">
+    <div class="pwa-banner-title">Instala Salud Financiera</div>
+    <div class="pwa-banner-sub">Tenla siempre a mano en tu celular</div>
+  </div>
+  <div class="pwa-banner-actions">
+    <button class="pwa-btn ghost" onclick="SF_FEATURES.dismissPwa()">Después</button>
+    <button class="pwa-btn" onclick="SF_FEATURES.installPwa()">Instalar</button>
+  </div>
+</div>
+
+<footer>
+  <strong>Salud Financiera</strong> — Proyecto ABP · Martín Vergara · Tomás Arriagada · Matías Toloza<br>
+  <span style="font-size:11px">The Almondale School Valle · 4to Medio 2026 · Esta herramienta es educativa y no constituye asesoría financiera profesional.</span>
+</footer>
+
+<!-- Main app logic -->
+<script src="js/app.js" defer></script>
+<!-- New features (onboarding, profile, share, PWA) -->
+<script src="js/features.js" defer></script>
+</body>
+</html>
