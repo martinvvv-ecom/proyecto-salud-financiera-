@@ -47,6 +47,9 @@
      TOPBAR
      Contiene: logo | nav | FEATURE 5 (indicadores) | FEATURE 3 (dark) | hamburger
      ================================================================ -->
+<!-- Salta la navegación: solo aparece al tabular, es el primer foco de la página -->
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
 <nav class="topbar">
   <div class="logo">
     <div class="logo-icon">💚</div>
@@ -121,7 +124,7 @@
   </div>
 </div>
 
-<main class="main">
+<main class="main" id="contenido" tabindex="-1">
 
 <!-- ================================================================
      PÁGINA 1: DASHBOARD
@@ -300,7 +303,7 @@
             <span class="slider-lbl" id="s-monto-lbl-label">Monto a solicitar</span>
             <span class="slider-val" id="s-monto-lbl">$5.000.000</span>
           </div>
-          <input type="range" class="slider" id="s-monto"
+          <input type="range" class="slider" id="s-monto" aria-labelledby="s-monto-lbl-label"
                  min="500000" max="200000000" step="500000" value="5000000"
                  oninput="simUpdate();saveSim()">
           <div class="prog-labels">
@@ -313,24 +316,24 @@
 
         <div class="slider-group">
           <div class="slider-top">
-            <span class="slider-lbl">Plazo de pago</span>
+            <span class="slider-lbl" id="s-plazo-lbl-label">Plazo de pago</span>
             <span class="slider-val" id="s-plazo-lbl">12 meses</span>
           </div>
-          <input type="range" class="slider" id="s-plazo" min="3" max="360" step="3" value="12" oninput="simUpdate();saveSim()">
+          <input type="range" class="slider" id="s-plazo" aria-labelledby="s-plazo-lbl-label" min="3" max="360" step="3" value="12" oninput="simUpdate();saveSim()">
           <div class="prog-labels"><span>3 meses</span><span>360 meses (30 años)</span></div>
         </div>
 
         <div class="slider-group">
           <div class="slider-top">
-            <span class="slider-lbl">Tasa de interés mensual</span>
+            <span class="slider-lbl" id="s-tasa-lbl-label">Tasa de interés mensual</span>
             <span class="slider-val" id="s-tasa-lbl">1.5%</span>
           </div>
-          <input type="range" class="slider" id="s-tasa" min="0.3" max="5.0" step="0.1" value="1.5" oninput="simUpdate();saveSim()">
+          <input type="range" class="slider" id="s-tasa" aria-labelledby="s-tasa-lbl-label" min="0.3" max="5.0" step="0.1" value="1.5" oninput="simUpdate();saveSim()">
           <div class="prog-labels"><span>0.3%</span><span>5.0%</span></div>
         </div>
 
         <div class="f-group">
-          <label class="f-label">Tipo de crédito</label>
+          <label class="f-label" for="s-tipo">Tipo de crédito</label>
           <select class="f-select" id="s-tipo" onchange="simUpdate();saveSim()">
             <option value="consumo">Crédito de consumo</option>
             <option value="hipotecario">Crédito hipotecario</option>
@@ -344,17 +347,17 @@
         <div class="sec-label">Tus ingresos</div>
 
         <div class="f-group">
-          <label class="f-label" id="s-ingreso-lbl">Ingreso mensual neto ($)</label>
+          <label class="f-label" id="s-ingreso-lbl" for="s-ingreso">Ingreso mensual neto ($)</label>
           <input type="number" class="f-input" id="s-ingreso" value="900000" oninput="simUpdate();saveSim()">
         </div>
         <div class="f-group">
-          <label class="f-label" id="s-otras-lbl">Otras cuotas mensuales ($)</label>
+          <label class="f-label" id="s-otras-lbl" for="s-otras">Otras cuotas mensuales ($)</label>
           <input type="number" class="f-input" id="s-otras" value="0" oninput="simUpdate();saveSim()">
           <div class="f-hint">Si ya tienes otros créditos, inclúyelos aquí en la misma moneda.</div>
         </div>
         <!-- EDIT 5: Gastos operacionales para cálculo CAE -->
         <div class="f-group">
-          <label class="f-label">Gastos operacionales y seguros / mes ($)
+          <label class="f-label" for="s-gastos-op">Gastos operacionales y seguros / mes ($)
             <span style="font-size:11px;font-weight:400;color:var(--muted)"> — para calcular CAE</span>
           </label>
           <input type="number" class="f-input" id="s-gastos-op" value="0" oninput="simUpdate();saveSim()" placeholder="Ej: 15000">
@@ -384,7 +387,7 @@
             <div style="font-family:var(--ff-head);font-size:24px;font-weight:800;letter-spacing:-1px" id="r-pct">0%</div>
           </div>
         </div>
-        <div class="f-label" style="margin-bottom:4px">Compromiso de ingresos</div>
+        <label class="f-label" style="margin-bottom:4px" for="glosario-input">Compromiso de ingresos</div>
         <div class="prog-track" style="height:12px;margin-bottom:6px">
           <div class="prog-fill" id="r-bar" style="width:0%"></div>
         </div>
@@ -448,13 +451,13 @@
 
     <div style="overflow-x:auto;margin-bottom:1rem">
       <table class="debt-tbl">
-        <thead>
+        <th scope="col"ead>
           <tr>
-            <th>Nombre deuda</th>
-            <th>Saldo actual ($)</th>
-            <th>Tasa mensual (%)</th>
-            <th>Pago mínimo ($)</th>
-            <th style="width:36px"></th>
+            <th scope="col">Nombre deuda</th>
+            <th scope="col">Saldo actual ($)</th>
+            <th scope="col">Tasa mensual (%)</th>
+            <th scope="col">Pago mínimo ($)</th>
+            <th scope="col" style="width:36px"></th>
           </tr>
         </thead>
         <tbody id="debt-tbody"></tbody>
@@ -462,7 +465,7 @@
     </div>
 
     <div class="f-group" style="max-width:360px;margin-bottom:1.25rem">
-      <label class="f-label">💰 Pago extra mensual disponible ($)</label>
+      <label class="f-label" for="debt-extra">💰 Pago extra mensual disponible ($)</label>
       <input type="number" class="f-input" id="debt-extra" value="80000" min="0"
              onchange="debtUpdate();saveDebts()">
       <div class="f-hint">Monto adicional sobre el mínimo de cada deuda. Al pagar una, ese dinero se redirige automáticamente a la siguiente.</div>
@@ -511,19 +514,19 @@
 
     <div id="oferta-results" style="display:none;overflow-x:auto;margin-bottom:1.5rem">
       <table class="oferta-cmp-tbl">
-        <thead>
+        <th scope="col"ead>
           <tr>
-            <th>#</th>
-            <th style="text-align:left">Banco / Institución</th>
-            <th>Monto</th>
-            <th>Tasa/mes</th>
-            <th>Tasa anual</th>
-            <th>Plazo</th>
-            <th>Cuota/mes</th>
-            <th>Intereses</th>
-            <th>Comisión</th>
-            <th>Costo total</th>
-            <th>CAE aprox.</th>
+            <th scope="col">#</th>
+            <th scope="col" style="text-align:left">Banco / Institución</th>
+            <th scope="col">Monto</th>
+            <th scope="col">Tasa/mes</th>
+            <th scope="col">Tasa anual</th>
+            <th scope="col">Plazo</th>
+            <th scope="col">Cuota/mes</th>
+            <th scope="col">Intereses</th>
+            <th scope="col">Comisión</th>
+            <th scope="col">Costo total</th>
+            <th scope="col">CAE aprox.</th>
           </tr>
         </thead>
         <tbody id="oferta-tbl-body"></tbody>
@@ -534,12 +537,12 @@
       <summary>📊 Tasas referenciales mercado chileno 2026</summary>
       <div style="margin-top:.75rem;overflow-x:auto">
         <table class="tasas-ref-tbl">
-          <thead>
+          <th scope="col"ead>
             <tr>
-              <th style="text-align:left">Institución</th>
-              <th>Tipo</th>
-              <th>Tasa mensual ref.</th>
-              <th>Tasa anual ref.</th>
+              <th scope="col" style="text-align:left">Institución</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Tasa mensual ref.</th>
+              <th scope="col">Tasa anual ref.</th>
             </tr>
           </thead>
           <tbody>
@@ -576,7 +579,7 @@
   <!-- ── GLOSARIO FINANCIERO ── -->
   <div class="glosario-wrap">
     <div class="glosario-titulo">📖 Glosario Financiero Chileno</div>
-    <div class="glosario-sub">Busca cualquier término en lenguaje simple. Sin letra chica.</div>
+    <div class="glosario-sub">Busca cualquier término en lenguaje simple. Sin letra chica.</label>
     <input
       type="text"
       class="glosario-input"
@@ -663,7 +666,7 @@
       <p class="page-sub">Registra tus gastos, compara con lo planeado y descubre cuánto puedes ahorrar.</p>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <select class="f-select" id="b-mes" style="width:auto;font-size:13px;padding:7px 12px" onchange="budgetCalc();saveAll()">
+      <select class="f-select" id="b-mes" aria-label="Mes del presupuesto" style="width:auto;font-size:13px;padding:7px 12px" onchange="budgetCalc();saveAll()">
         <option value="Enero">Enero 2026</option><option value="Febrero">Febrero 2026</option>
         <option value="Marzo" selected>Marzo 2026</option><option value="Abril">Abril 2026</option>
         <option value="Mayo">Mayo 2026</option><option value="Junio">Junio 2026</option>
@@ -686,14 +689,14 @@
   <div class="card card-accent mb15">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:end;flex-wrap:wrap">
       <div>
-        <div class="f-label">💰 Ingreso neto del mes ($)</div>
+        <label class="f-label" for="b-ingreso">💰 Ingreso neto del mes ($)</label>
         <input type="number" class="f-input" id="b-ingreso" placeholder="Ej: 900000"
                oninput="budgetCalc();dashUpdate();saveAll()"
                style="font-family:var(--ff-head);font-weight:700;font-size:16px;margin-top:4px">
         <div class="f-hint">⟳ Fuente de datos para el Dashboard</div>
       </div>
       <div>
-        <div class="f-label">📉 Deudas vigentes totales ($)</div>
+        <label class="f-label" for="b-deuda">📉 Deudas vigentes totales ($)</label>
         <input type="number" class="f-input" id="b-deuda" placeholder="Ej: 320000"
                oninput="budgetCalc();dashUpdate();saveAll()"
                style="font-family:var(--ff-head);font-weight:700;font-size:16px;margin-top:4px">
@@ -729,14 +732,14 @@
 
   <div class="card mb15" style="overflow-x:auto">
     <table class="budget-table" id="budget-tbl">
-      <thead>
+      <th scope="col"ead>
         <tr>
-          <th>Categoría</th>
-          <th>Descripción</th>
-          <th style="text-align:right">Presupuestado ($)</th>
-          <th style="text-align:right">Real ($)</th>
-          <th style="text-align:right">Diferencia</th>
-          <th style="width:40px"></th>
+          <th scope="col">Categoría</th>
+          <th scope="col">Descripción</th>
+          <th scope="col" style="text-align:right">Presupuestado ($)</th>
+          <th scope="col" style="text-align:right">Real ($)</th>
+          <th scope="col" style="text-align:right">Diferencia</th>
+          <th scope="col" style="width:40px"></th>
         </tr>
       </thead>
       <tbody id="budget-tbody"></tbody>
@@ -780,15 +783,15 @@
     <!-- Formulario para agregar vencimiento -->
     <div class="venc-form">
       <div class="f-group" style="margin-bottom:0">
-        <label class="f-label">Nombre de la cuenta</label>
+        <label class="f-label" for="venc-nombre-in">Nombre de la cuenta</label>
         <input class="f-input" id="venc-nombre-in" placeholder="Ej: Luz, Agua, Arriendo…" style="padding:8px 12px">
       </div>
       <div class="f-group" style="margin-bottom:0">
-        <label class="f-label">Monto ($)</label>
+        <label class="f-label" for="venc-monto-in">Monto ($)</label>
         <input class="f-input" type="number" id="venc-monto-in" placeholder="35000" style="padding:8px 12px">
       </div>
       <div class="f-group" style="margin-bottom:0">
-        <label class="f-label">Día del mes</label>
+        <label class="f-label" for="venc-dia-in">Día del mes</label>
         <input class="f-input" type="number" id="venc-dia-in" min="1" max="31" placeholder="15" style="padding:8px 12px;width:80px">
       </div>
       <button class="btn btn-primary btn-sm" onclick="addVenc()" style="align-self:flex-end;margin-bottom:2px">+ Agregar</button>
@@ -842,12 +845,12 @@
         <div class="sec-label">Parámetros de inversión</div>
 
         <div class="f-group">
-          <label class="f-label">Ahorro mensual ($)</label>
+          <label class="f-label" for="inv-mensual">Ahorro mensual ($)</label>
           <input type="number" class="f-input" id="inv-mensual" value="50000" oninput="invLibreUpdate()">
         </div>
 
         <div class="f-group">
-          <label class="f-label">Tasa de interés anual (%)</label>
+          <label class="f-label" for="inv-tasa">Tasa de interés anual (%)</label>
           <div class="quick-rate-group">
             <button class="quick-rate-btn" onclick="setInvTasa(5,this)">📦 DAP (5%)</button>
             <button class="quick-rate-btn" onclick="setInvTasa(7,this)">📊 F. Mutuo (7%)</button>
@@ -858,7 +861,7 @@
         </div>
 
         <div class="f-group">
-          <label class="f-label">Plazo de inversión</label>
+          <label class="f-label" for="inv-anos">Plazo de inversión</label>
           <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
             <input type="range" class="slider" id="inv-anos" min="1" max="40" value="20" oninput="invLibreUpdate()">
             <span style="font-family:var(--ff-head);font-size:17px;font-weight:700;color:var(--green-600);min-width:70px" id="inv-anos-lbl">20 años</span>
@@ -936,11 +939,11 @@
 
         <div class="g2" style="gap:.75rem">
           <div class="f-group" style="margin-bottom:0">
-            <label class="f-label">Edad actual</label>
+            <label class="f-label" for="jub-edad">Edad actual</label>
             <input type="number" class="f-input" id="jub-edad" value="30" min="18" max="64" oninput="invJubUpdate()">
           </div>
           <div class="f-group" style="margin-bottom:0">
-            <label class="f-label">Edad de jubilación</label>
+            <label class="f-label" for="jub-edad-ret">Edad de jubilación</label>
             <select class="f-select" id="jub-edad-ret" onchange="invJubUpdate()">
               <option value="60">60 años</option>
               <option value="65" selected>65 años</option>
@@ -952,25 +955,25 @@
         </div>
 
         <div class="f-group">
-          <label class="f-label">Sueldo imponible mensual ($)</label>
+          <label class="f-label" for="jub-sueldo">Sueldo imponible mensual ($)</label>
           <input type="number" class="f-input" id="jub-sueldo" value="900000" oninput="invJubUpdate()">
           <div class="f-hint">AFP descuenta el 10% obligatorio de este monto.</div>
         </div>
 
         <div class="f-group">
-          <label class="f-label">Saldo actual en tu AFP ($)</label>
+          <label class="f-label" for="jub-saldo">Saldo actual en tu AFP ($)</label>
           <input type="number" class="f-input" id="jub-saldo" value="5000000" oninput="invJubUpdate()">
           <div class="f-hint">Lo encuentras en <strong>Mi AFP</strong> o en tu estado de cuenta.</div>
         </div>
 
         <div class="f-group">
-          <label class="f-label">Aporte APV mensual extra ($)</label>
+          <label class="f-label" for="jub-apv">Aporte APV mensual extra ($)</label>
           <input type="number" class="f-input" id="jub-apv" value="50000" oninput="invJubUpdate()">
           <div class="f-hint">El Estado bonifica el 15% de lo aportado (tope 6 UTM/año).</div>
         </div>
 
         <div class="f-group">
-          <label class="f-label">Rentabilidad AFP anual estimada (%)</label>
+          <label class="f-label" for="jub-tasa">Rentabilidad AFP anual estimada (%)</label>
           <input type="number" class="f-input" id="jub-tasa" value="5" step="0.5" oninput="invJubUpdate()">
           <div class="f-hint">Histórico Fondo C: ~4–6% anual real.</div>
         </div>
@@ -1035,11 +1038,11 @@
     <div class="sec-label">Datos del vehículo</div>
     <div class="g2" style="gap:1rem">
       <div class="f-group" style="margin-bottom:0">
-        <label class="f-label">Valor del vehículo ($) <span style="font-size:11px;color:var(--muted);font-weight:400">— ej: Hyundai Tucson 2024</span></label>
+        <label class="f-label" for="aut-valor">Valor del vehículo ($) <span style="font-size:11px;color:var(--muted);font-weight:400">— ej: Hyundai Tucson 2024</span></label>
         <input type="number" class="f-input" id="aut-valor" value="18500000" oninput="autosUpdate()">
       </div>
       <div class="f-group" style="margin-bottom:0">
-        <label class="f-label">Pie inicial (%)</label>
+        <label class="f-label" for="aut-pie-pct">Pie inicial (%)</label>
         <div style="display:flex;align-items:center;gap:10px">
           <input type="range" class="slider" id="aut-pie-pct" min="0" max="50" step="5" value="20" oninput="autosUpdate()">
           <span style="font-family:var(--ff-head);font-size:16px;font-weight:700;color:var(--green-600);min-width:45px" id="aut-pie-lbl">20%</span>
@@ -1054,11 +1057,11 @@
     <div class="card">
       <div class="auto-col-head traditional">💳 Crédito Tradicional</div>
       <div class="f-group">
-        <label class="f-label">Plazo (meses)</label>
+        <label class="f-label" for="aut-t-plazo">Plazo (meses)</label>
         <input type="number" class="f-input" id="aut-t-plazo" value="60" oninput="autosUpdate()">
       </div>
       <div class="f-group">
-        <label class="f-label">Tasa mensual (%)</label>
+        <label class="f-label" for="aut-t-tasa">Tasa mensual (%)</label>
         <input type="number" class="f-input" id="aut-t-tasa" value="0.8" step="0.1" oninput="autosUpdate()">
         <div class="f-hint">Hyundai Financial: ~0.8% mensual referencial</div>
       </div>
@@ -1074,15 +1077,15 @@
     <div class="card">
       <div class="auto-col-head smart">✅ Compra Inteligente (cuotón final)</div>
       <div class="f-group">
-        <label class="f-label">Plazo (meses)</label>
+        <label class="f-label" for="aut-s-plazo">Plazo (meses)</label>
         <input type="number" class="f-input" id="aut-s-plazo" value="48" oninput="autosUpdate()">
       </div>
       <div class="f-group">
-        <label class="f-label">Tasa mensual (%)</label>
+        <label class="f-label" for="aut-s-tasa">Tasa mensual (%)</label>
         <input type="number" class="f-input" id="aut-s-tasa" value="0.75" step="0.1" oninput="autosUpdate()">
       </div>
       <div class="f-group">
-        <label class="f-label">Valor Futuro Garantizado / Cuotón final ($)</label>
+        <label class="f-label" for="aut-s-cuoton">Valor Futuro Garantizado / Cuotón final ($)</label>
         <input type="number" class="f-input" id="aut-s-cuoton" value="5000000" oninput="autosUpdate()">
         <div class="f-hint">Hyundai Tucson 2024: cuotón referencial ~$5.000.000</div>
       </div>
@@ -1139,7 +1142,7 @@
       <div class="emp-tool-sub">¿Cuánto debes cobrar para recibir el líquido que necesitas? La retención de honorarios 2026 es del <strong>14,5%</strong>.</div>
 
       <div class="f-group">
-        <label class="f-label">Sueldo líquido deseado ($)</label>
+        <label class="f-label" for="sii-liquido">Sueldo líquido deseado ($)</label>
         <input type="number" class="f-input" id="sii-liquido" value="800000" oninput="siiCalc()">
         <div class="f-hint">Lo que quieres recibir en tu cuenta bancaria.</div>
       </div>
@@ -1175,12 +1178,12 @@
       <div class="emp-tool-sub">Desglose real de costos para ventas online: incluye IVA (19%), pasarela de pago y margen neto real.</div>
 
       <div class="f-group">
-        <label class="f-label">Costo del producto ($) — precio que pagas tú</label>
+        <label class="f-label" for="iva-neto">Costo del producto ($) — precio que pagas tú</label>
         <input type="number" class="f-input" id="iva-neto" value="25000" oninput="ivaCalc()">
         <div class="f-hint">Precio sin IVA que te cobra tu proveedor o costo directo.</div>
       </div>
       <div class="f-group">
-        <label class="f-label">Tarifa pasarela de pago (%) — ej: Shopify/Stripe/Transbank</label>
+        <label class="f-label" for="iva-pasarela">Tarifa pasarela de pago (%) — ej: Shopify/Stripe/Transbank</label>
         <div style="display:flex;align-items:center;gap:10px">
           <input type="range" class="slider" id="iva-pasarela" min="0.5" max="5" step="0.5" value="2" oninput="ivaCalc()">
           <span style="font-family:var(--ff-head);font-size:16px;font-weight:700;color:var(--blue-600);min-width:40px" id="iva-pasarela-lbl">2%</span>
@@ -1188,7 +1191,7 @@
         <div class="f-hint">Shopify Payments: ~2,0% · Stripe: ~2,9% · Transbank WebPay Plus: ~1,99%</div>
       </div>
       <div class="f-group">
-        <label class="f-label">Margen de ganancia deseado (%)</label>
+        <label class="f-label" for="iva-margen">Margen de ganancia deseado (%)</label>
         <div style="display:flex;align-items:center;gap:10px">
           <input type="range" class="slider" id="iva-margen" min="5" max="200" step="5" value="40" oninput="ivaCalc()">
           <span style="font-family:var(--ff-head);font-size:16px;font-weight:700;color:var(--green-600);min-width:50px" id="iva-margen-lbl">40%</span>
@@ -1239,12 +1242,12 @@
     <div class="import-subtitle">Calcula el costo real de importar desde el extranjero. Arancel (6% del valor CIF) + IVA chileno (19% sobre valor CIF + arancel).</div>
     <div class="g2" style="gap:1rem;margin-bottom:1rem">
       <div class="f-group" style="margin-bottom:0">
-        <label class="f-label">Valor del producto (USD)</label>
+        <label class="f-label" for="imp-valor-usd">Valor del producto (USD)</label>
         <input type="number" class="f-input" id="imp-valor-usd" value="100" oninput="importCalc()">
         <div class="f-hint">Precio FOB del proveedor (sin flete).</div>
       </div>
       <div class="f-group" style="margin-bottom:0">
-        <label class="f-label">Costo de envío (USD)</label>
+        <label class="f-label" for="imp-flete-usd">Costo de envío (USD)</label>
         <input type="number" class="f-input" id="imp-flete-usd" value="25" oninput="importCalc()">
         <div class="f-hint">Courier o flete internacional hasta Chile.</div>
       </div>
@@ -1431,7 +1434,7 @@
       </div>
     </div>
     <div class="f-group">
-      <label class="f-label">Tu nombre</label>
+      <label class="f-label" for="profile-name-input">Tu nombre</label>
       <input type="text" class="f-input" id="profile-name-input" placeholder="Ej: Martín Vergara" maxlength="40" onkeypress="if(event.key==='Enter')SF_FEATURES.submitProfileSetup()">
       <div class="f-hint">Esto solo se guarda en tu navegador. Tu privacidad está protegida.</div>
     </div>

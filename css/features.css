@@ -881,3 +881,42 @@ body.dark .aviso-ejemplo-txt strong { color: var(--amber-400); }
 .budget-vacio-btns {
   display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
 }
+
+/* ============================================================
+   ACCESIBILIDAD
+   ============================================================ */
+/* Salta la navegación. Oculto hasta que recibe foco por teclado:
+   quien usa mouse no lo ve, quien tabula lo encuentra primero. */
+.skip-link {
+  position: absolute; left: 8px; top: 0; z-index: 2000;
+  padding: 10px 16px; border-radius: 0 0 var(--r-sm) var(--r-sm);
+  background: var(--green-600); color: #fff;
+  font-family: var(--ff-body); font-size: 13.5px; font-weight: 600;
+  text-decoration: none;
+  /* Se esconde con transform y no con top: no fuerza layout al animar */
+  transform: translateY(-150%);
+  transition: transform .15s;
+}
+.skip-link:focus { transform: translateY(0); }
+
+/* Foco visible en todo lo interactivo. Sin esto, quien navega con
+   teclado no sabe dónde está parado. */
+a:focus-visible, button:focus-visible,
+input:focus-visible, select:focus-visible, textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--green-500);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+/* El <main> recibe foco al usar el skip link, pero no debe dibujar borde */
+main:focus, main:focus-visible { outline: none; }
+
+/* Respetar a quien pidió menos animación en su sistema */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

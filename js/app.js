@@ -617,7 +617,7 @@ function simUpdate() {
     return c * plazo - monto;
   };
   const minIntr = Math.min(...insts.map(i => calcIntr(i.tasa)));
-  let tbl = '<tr><th>Institución</th><th>Tasa mensual</th><th>Cuota</th><th>Intereses</th></tr>';
+  let tbl = '<tr><th scope="col">Institución</th><th scope="col">Tasa mensual</th><th scope="col">Cuota</th><th scope="col">Intereses</th></tr>';
   insts.forEach(inst => {
     const c    = monto * (inst.tasa * Math.pow(1+inst.tasa, plazo)) / (Math.pow(1+inst.tasa, plazo) - 1);
     const intr = c * plazo - monto;
@@ -953,16 +953,16 @@ function renderBudgetTable() {
     const diffStr   = (diff > 0 ? '+' : '') + fmt(diff);
     tbody.innerHTML += `<tr>
       <td>
-        <select onchange="budgetRows[${i}].cat=+this.value;renderBudgetTable();budgetCalc();saveAll()"
+        <select aria-label="Categoría del gasto ${i + 1}" onchange="budgetRows[${i}].cat=+this.value;renderBudgetTable();budgetCalc();saveAll()"
                 style="background:transparent;border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:12px;color:var(--ink);cursor:pointer;max-width:150px">
           ${catConfig.map((c, ci) => `<option value="${ci}"${ci === row.cat ? ' selected' : ''}>${c.label}</option>`).join('')}
         </select>
       </td>
-      <td><input class="b-input" value="${row.desc}" onchange="budgetRows[${i}].desc=this.value;saveAll()"></td>
-      <td style="text-align:right"><input class="b-num" type="number" value="${row.presup}" onchange="budgetRows[${i}].presup=+this.value;budgetCalc();saveAll()"></td>
-      <td style="text-align:right"><input class="b-num" type="number" value="${row.real}"   onchange="budgetRows[${i}].real=+this.value;budgetCalc();dashUpdate();saveAll()"></td>
+      <td><input class="b-input" aria-label="Descripción del gasto ${i + 1}" value="${row.desc}" onchange="budgetRows[${i}].desc=this.value;saveAll()"></td>
+      <td style="text-align:right"><input class="b-num" type="number" aria-label="Monto presupuestado del gasto ${i + 1}" value="${row.presup}" onchange="budgetRows[${i}].presup=+this.value;budgetCalc();saveAll()"></td>
+      <td style="text-align:right"><input class="b-num" type="number" aria-label="Monto real gastado ${i + 1}" value="${row.real}"   onchange="budgetRows[${i}].real=+this.value;budgetCalc();dashUpdate();saveAll()"></td>
       <td style="text-align:right" class="${diffClass}">${diffStr}</td>
-      <td><button onclick="deleteBudgetRow(${i})" class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:12px">✕</button></td>
+      <td><button onclick="deleteBudgetRow(${i})" class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:12px" aria-label="Eliminar el gasto ${i + 1}">✕</button></td>
     </tr>`;
   });
   budgetCalc();
@@ -1551,7 +1551,7 @@ function renderVenc() {
       <span class="venc-nombre">${row.nombre}</span>
       <span class="venc-monto">${fmt(row.monto)}</span>
       <span class="venc-dia ${diaCls}">Día ${row.dia}${daysLeft === 0 && !row.paid ? ' ⚡' : daysLeft < 0 && !row.paid ? ' ❗' : ''}</span>
-      <button class="venc-del" onclick="deleteVenc(${row.id})" title="Eliminar">✕</button>
+      <button class="venc-del" onclick="deleteVenc(${row.id})" title="Eliminar" aria-label="Eliminar el vencimiento ${row.nombre}">✕</button>
     `;
     list.appendChild(item);
   });
@@ -2313,13 +2313,13 @@ async function exportPDF() {
     <div style="margin-bottom:16px">
       <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#6b7280;margin-bottom:8px">Detalle de Gastos</div>
       <table style="width:100%;border-collapse:collapse">
-        <thead>
+        <th scope="col"ead>
           <tr style="background:#0f5240;color:#fff">
-            <th style="padding:7px 9px;text-align:left;font-size:10.5px;font-weight:600">Categoría</th>
-            <th style="padding:7px 9px;text-align:left;font-size:10.5px;font-weight:600">Descripción</th>
-            <th style="padding:7px 9px;text-align:right;font-size:10.5px;font-weight:600">Presupuesto</th>
-            <th style="padding:7px 9px;text-align:right;font-size:10.5px;font-weight:600">Real</th>
-            <th style="padding:7px 9px;text-align:right;font-size:10.5px;font-weight:600">Dif.</th>
+            <th scope="col" style="padding:7px 9px;text-align:left;font-size:10.5px;font-weight:600">Categoría</th>
+            <th scope="col" style="padding:7px 9px;text-align:left;font-size:10.5px;font-weight:600">Descripción</th>
+            <th scope="col" style="padding:7px 9px;text-align:right;font-size:10.5px;font-weight:600">Presupuesto</th>
+            <th scope="col" style="padding:7px 9px;text-align:right;font-size:10.5px;font-weight:600">Real</th>
+            <th scope="col" style="padding:7px 9px;text-align:right;font-size:10.5px;font-weight:600">Dif.</th>
           </tr>
         </thead>
         <tbody>${filas}</tbody>
@@ -2762,18 +2762,18 @@ function renderDebtTable() {
     return;
   }
   $('debt-empty').style.display = 'none';
-  tbody.innerHTML = debtRows.map(d => `
+  tbody.innerHTML = debtRows.map((d, i) => `
     <tr>
       <td><input class="f-input" style="min-width:130px" value="${d.nombre}"
-          onchange="updateDebtField(${d.id},'nombre',this.value)"></td>
+          aria-label="Nombre de la deuda ${i + 1}" onchange="updateDebtField(${d.id},'nombre',this.value)"></td>
       <td><input class="f-input" type="number" style="min-width:110px" value="${d.saldo}" min="0"
-          onchange="updateDebtField(${d.id},'saldo',+this.value)"></td>
+          aria-label="Saldo de ${d.nombre}" onchange="updateDebtField(${d.id},'saldo',+this.value)"></td>
       <td><input class="f-input" type="number" style="min-width:80px" value="${d.tasa}" min="0" max="30" step="0.1"
-          onchange="updateDebtField(${d.id},'tasa',+this.value)"></td>
+          aria-label="Tasa mensual de ${d.nombre}" onchange="updateDebtField(${d.id},'tasa',+this.value)"></td>
       <td><input class="f-input" type="number" style="min-width:110px" value="${d.pagMin}" min="0"
-          onchange="updateDebtField(${d.id},'pagMin',+this.value)"></td>
+          aria-label="Pago mínimo de ${d.nombre}" onchange="updateDebtField(${d.id},'pagMin',+this.value)"></td>
       <td><button class="btn btn-sm" style="background:var(--red-500);color:#fff;border:none;padding:3px 8px"
-          onclick="removeDebtRow(${d.id})">✕</button></td>
+          onclick="removeDebtRow(${d.id})" aria-label="Eliminar la deuda ${d.nombre}">✕</button></td>
     </tr>
   `).join('');
 }
