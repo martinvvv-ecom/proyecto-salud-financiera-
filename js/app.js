@@ -2416,6 +2416,22 @@ function setupCalcEnhancements() {
   );
 }
 
+/* ------------------------------------------------------------------
+   Estado de deudas y ofertas
+   Se declara ACÁ, y no junto a sus funciones más abajo, porque el
+   bloque de inicialización que sigue llama a loadDebts() y
+   loadOfertas(), y let/const no se izan: leerlas antes de su
+   declaración lanza ReferenceError por la temporal dead zone. Eso
+   abortaba la inicialización completa y dejaba sin registrar los
+   listeners de load, resize y scroll que vienen más abajo.
+   (Por eso _debtChart, unas líneas más abajo, estaba declarado con
+   var: es el mismo problema, parchado a medias en su momento.)
+   ------------------------------------------------------------------ */
+let debtRows   = [];
+let _debtId    = 0;
+let ofertaRows = [];
+let _ofertaId  = 0;
+
 // FEAT E: Renderizar vencimientos con datos cargados
 renderVenc();
 
@@ -2602,8 +2618,8 @@ document.addEventListener('keydown', e => {
 /* ============================================================
    SIMULADOR DE DEUDAS — Snowball vs Avalancha
    ============================================================ */
-let debtRows = [];
-let _debtId  = 0;
+// debtRows y _debtId se declaran junto al bloque de inicialización,
+// más arriba: loadDebts() los usa y corre antes que esta línea.
 var _debtChart = null; // var: hoisted por si acaso
 
 function addDebtRow(nombre, saldo, tasa, pagMin) {
@@ -2818,8 +2834,8 @@ function loadDebts() {
 /* ============================================================
    COMPARADOR DE OFERTAS DE CRÉDITO
    ============================================================ */
-let ofertaRows = [];
-let _ofertaId  = 0;
+// ofertaRows y _ofertaId se declaran junto al bloque de inicialización,
+// más arriba: loadOfertas() los usa y corre antes que esta línea.
 
 function addOfertaRow(banco, monto, tasa, plazo, com) {
   const id = ++_ofertaId;
