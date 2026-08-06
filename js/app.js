@@ -256,12 +256,73 @@ function closeMobileMenu() {
    Lee de budgetRows (gastos reales), b-ingreso y b-deuda.
    No tiene inputs propios.
    ============================================================ */
-function dashUpdate() {
-  // ► Fuente única: leer del módulo Presupuesto
+/* ============================================================
+   SCORE FINANCIERO — fuente única
+   ============================================================
+   Antes esta regla estaba escrita dos veces: una en dashUpdate() para
+   la pantalla y otra dentro de exportPDF() para la ficha en PDF. Daban
+   el mismo número, pero los colores ya se habían separado, y cualquier
+   ajuste de umbral en un lado dejaba al otro diciendo algo distinto en
+   silencio. El PDF es el documento que queda impreso, así que esa
+   divergencia era la más cara.
+
+   Reglas:
+     Ahorro ≥ 20% de ingresos   → +350
+     Ahorro 10–20%              → +175
+     Gastos > 80% de ingresos   → −300
+     Gastos 65–80%              → −150
+     Cuota de deuda > 30%       → −250
+     Cuota de deuda 15–30%      → −100
+     Base                       →  600
+     Badges ganados             →  +50 cada uno
+   ============================================================ */
+const SCORE_NIVELES = [
+  // 'impreso' es más oscuro a propósito: el PDF va sobre papel blanco
+  { min: 800, label: 'Perfil Excelente',  pantalla: '#1da077', impreso: '#1da077' },
+  { min: 650, label: 'Buen Perfil',       pantalla: '#3b82f6', impreso: '#1d4ed8' },
+  { min: 450, label: 'Perfil Moderado',   pantalla: '#f59e0b', impreso: '#d97706' },
+  { min:   0, label: 'Requiere Atención', pantalla: '#ef4444', impreso: '#dc2626' },
+];
+
+function calcularScore() {
   const ing = parseFloat($('b-ingreso').value) || 0;
   const gas = budgetRows.reduce((s, r) => s + (r.real || 0), 0);
   const deu = parseFloat($('b-deuda').value) || 0;
   const aho = Math.max(ing - gas, 0);
+
+  const ahorroPct = ing > 0 ? (aho / ing) * 100 : 0;
+  const gastoPct  = ing > 0 ? (gas / ing) * 100 : 100;
+  const deudaPct  = ing > 0 ? ((deu / 12) / ing) * 100 : 0;
+
+  let ptAhorro = 0, ptGasto = 0, ptDeuda = 0;
+  if      (ahorroPct >= 20) ptAhorro =  350;
+  else if (ahorroPct >= 10) ptAhorro =  175;
+  if      (gastoPct  >  80) ptGasto  = -300;
+  else if (gastoPct  >  65) ptGasto  = -150;
+  if      (deudaPct  >  30) ptDeuda  = -250;
+  else if (deudaPct  >  15) ptDeuda  = -100;
+
+  const score = Math.max(0, Math.min(1000, 600 + ptAhorro + ptGasto + ptDeuda + badgeScore));
+  const nivel = SCORE_NIVELES.find(n => score >= n.min);
+
+  return {
+    ing, gas, deu, aho,
+    ahorroPct, gastoPct, deudaPct,
+    ptAhorro, ptGasto, ptDeuda,
+    score,
+    label       : nivel.label,
+    color       : nivel.pantalla,
+    colorImpreso: nivel.impreso
+  };
+}
+
+function dashUpdate() {
+  // ► Fuente única: el score y sus insumos salen de calcularScore()
+  const s = calcularScore();
+  const { ing, gas, deu, aho, score } = s;
+  const ahorroPct = s.ahorroPct, gastoPct = s.gastoPct, deudaPct = s.deudaPct;
+  const ptAhorro = s.ptAhorro, ptGasto = s.ptGasto, ptDeuda = s.ptDeuda;
+  const scoreLabel = s.label, scoreColor = s.color;
 
   // Actualizar tarjetas del dashboard (solo lectura)
   $('d-ingreso').textContent = fmt(ing);
@@ -269,49 +330,8 @@ function dashUpdate() {
   $('d-deuda').textContent   = fmt(deu);
   $('d-ahorro').textContent  = fmt(aho);
 
-  // ============================================================
-  // FEAT A: SCORE FINANCIERO 0–1000 + VELOCÍMETRO
-  // Reglas de puntuación:
-  //   Ahorro > 20% ingresos → +350 pts (máximo)
-  //   Ahorro 10–20%         → +175 pts
-  //   Gastos > 80% ingresos → −300 pts
-  //   Gastos 65–80%         → −150 pts
-  //   Deuda > 30% ingresos  → −250 pts
-  //   Deuda 15–30%          → −100 pts
-  //   Base                  → 600 pts
-  // ============================================================
-  const ahoroPct = ing > 0 ? (aho / ing) * 100 : 0;
-  const gastoPct = ing > 0 ? (gas / ing) * 100 : 100;
-  const deudaPct = ing > 0 ? ((deu / 12) / ing) * 100 : 0;
-
-  let score = 600;
-  // Ahorro
-  let ptAhorro = 0;
-  if (ahoroPct >= 20)     { score += 350; ptAhorro = +350; }
-  else if (ahoroPct >= 10){ score += 175; ptAhorro = +175; }
-  // Gastos
-  let ptGasto = 0;
-  if (gastoPct > 80)      { score -= 300; ptGasto = -300; }
-  else if (gastoPct > 65) { score -= 150; ptGasto = -150; }
-  // Deuda mensual
-  let ptDeuda = 0;
-  if (deudaPct > 30)      { score -= 250; ptDeuda = -250; }
-  else if (deudaPct > 15) { score -= 100; ptDeuda = -100; }
-
-  score = Math.max(0, Math.min(1000, score));
-
-  // EDIT 4: sumar puntos permanentes de badges ganados (50 pts por badge)
-  score = Math.min(1000, score + badgeScore);
-
-  // Clasificación
-  let scoreLabel, scoreCls, scoreColor;
-  if      (score >= 800) { scoreLabel='Perfil Excelente';     scoreCls='excellent'; scoreColor='#1da077'; }
-  else if (score >= 650) { scoreLabel='Buen Perfil';          scoreCls='good';      scoreColor='#3b82f6'; }
-  else if (score >= 450) { scoreLabel='Perfil Moderado';      scoreCls='moderate';  scoreColor='#f59e0b'; }
-  else                    { scoreLabel='Requiere Atención';   scoreCls='critical';  scoreColor='#ef4444'; }
-
   // Actualizar score factors
-  $('sf-ahorro').textContent = ahoroPct.toFixed(1) + '%';
+  $('sf-ahorro').textContent = ahorroPct.toFixed(1) + '%';
   $('sf-gasto').textContent  = gastoPct.toFixed(1) + '%';
   $('sf-deuda').textContent  = deudaPct.toFixed(1) + '%';
   $('sf-puntos-ahorro').textContent = (ptAhorro >= 0 ? '+' : '') + ptAhorro;
@@ -2181,26 +2201,21 @@ function importCalc() {
    Documento de 2 secciones: Executive Summary + Score + Budget + Inversión
    ============================================================ */
 async function exportPDF() {
-  const ing       = parseFloat($('b-ingreso').value) || 0;
-  const deu       = parseFloat($('b-deuda').value)   || 0;
-  const totReal   = budgetRows.reduce((s, r) => s + r.real,   0);
-  const totPresup = budgetRows.reduce((s, r) => s + r.presup, 0);
-  const ahorro    = Math.max(ing - totReal, 0);
+  // Misma regla y mismos insumos que la pantalla, para que la ficha
+  // impresa nunca diga un número distinto al del panel.
+  const _s        = calcularScore();
+  const ing       = _s.ing;
+  const deu       = _s.deu;
+  const totReal   = _s.gas;
+  const ahorro    = _s.aho;
+  const pdfScore  = _s.score;
+  const scoreLabel = _s.label;
+  const scoreColor = _s.colorImpreso;   // variante oscura, va sobre papel blanco
+
+  const totPresup = budgetRows.reduce((s, r) => s + (r.presup || 0), 0);
   const mes       = $('b-mes').value;
   const hoy       = new Date().toLocaleDateString('es-CL');
   const ahorroAnualPDF = ahorro * 12;
-
-  // Score para el PDF
-  const ahoroPct = ing > 0 ? (ahorro / ing) * 100 : 0;
-  const gastoPct = ing > 0 ? (totReal / ing) * 100 : 100;
-  const deudaPct = ing > 0 ? ((deu / 12) / ing) * 100 : 0;
-  let pdfScore = 600;
-  if (ahoroPct >= 20) pdfScore += 350; else if (ahoroPct >= 10) pdfScore += 175;
-  if (gastoPct > 80)  pdfScore -= 300; else if (gastoPct > 65) pdfScore -= 150;
-  if (deudaPct > 30)  pdfScore -= 250; else if (deudaPct > 15) pdfScore -= 100;
-  pdfScore = Math.min(1000, Math.max(0, pdfScore + badgeScore));
-  const scoreColor = pdfScore >= 800 ? '#1da077' : pdfScore >= 650 ? '#1d4ed8' : pdfScore >= 450 ? '#d97706' : '#dc2626';
-  const scoreLabel = pdfScore >= 800 ? 'Perfil Excelente' : pdfScore >= 650 ? 'Buen Perfil' : pdfScore >= 450 ? 'Perfil Moderado' : 'Requiere Atención';
 
   // Recomendación de inversión
   const recomendacion = pdfScore >= 800
