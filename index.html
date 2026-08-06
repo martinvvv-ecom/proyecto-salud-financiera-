@@ -129,6 +129,16 @@
      ================================================================ -->
 <section class="page active" id="page-dashboard">
 
+  <!-- Aviso visible mientras el presupuesto cargado sea el de ejemplo -->
+  <div class="aviso-ejemplo" id="aviso-ejemplo" style="display:none">
+    <span class="aviso-ejemplo-ico" aria-hidden="true">🧪</span>
+    <div class="aviso-ejemplo-txt">
+      <strong>Estás viendo datos de ejemplo.</strong>
+      Estos números son inventados, para mostrarte cómo funciona la app. No son tuyos.
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="limpiarEjemplo()">Empezar de cero</button>
+  </div>
+
   <div class="welcome-strip">
     <div>
       <div class="welcome-title">¡Bienvenido a tu panel financiero! 👋</div>
@@ -677,14 +687,14 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:end;flex-wrap:wrap">
       <div>
         <div class="f-label">💰 Ingreso neto del mes ($)</div>
-        <input type="number" class="f-input" id="b-ingreso" value="900000"
+        <input type="number" class="f-input" id="b-ingreso" placeholder="Ej: 900000"
                oninput="budgetCalc();dashUpdate();saveAll()"
                style="font-family:var(--ff-head);font-weight:700;font-size:16px;margin-top:4px">
         <div class="f-hint">⟳ Fuente de datos para el Dashboard</div>
       </div>
       <div>
         <div class="f-label">📉 Deudas vigentes totales ($)</div>
-        <input type="number" class="f-input" id="b-deuda" value="320000"
+        <input type="number" class="f-input" id="b-deuda" placeholder="Ej: 320000"
                oninput="budgetCalc();dashUpdate();saveAll()"
                style="font-family:var(--ff-head);font-weight:700;font-size:16px;margin-top:4px">
         <div class="f-hint">⟳ Fuente de datos para el Dashboard</div>

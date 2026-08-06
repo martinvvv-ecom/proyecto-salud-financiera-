@@ -46,7 +46,8 @@ const LS = {
   venc   : 'sf_vencimientos',  // FEAT E: calendario de vencimientos
   badges : 'sf_badges',         // EDIT 4: gamificación — badges ganados
   debts  : 'sf_debts',          // Simulador de deudas
-  ofertas: 'sf_ofertas'         // Comparador de ofertas
+  ofertas: 'sf_ofertas',        // Comparador de ofertas
+  ejemplo: 'sf_modo_ejemplo'    // El presupuesto cargado es el de ejemplo
 };
 
 // EDIT 4: badges ganados (se carga de localStorage)
@@ -86,6 +87,9 @@ function loadFromStorage() {
     // Presupuesto
     const savedBudget = localStorage.getItem(LS.budget);
     if (savedBudget) budgetRows = JSON.parse(savedBudget);
+
+    // Si lo guardado venía del presupuesto de ejemplo, seguir avisándolo
+    modoEjemplo = localStorage.getItem(LS.ejemplo) === '1';
 
     const savedIncome = localStorage.getItem(LS.income);
     if (savedIncome) $('b-ingreso').value = savedIncome;
@@ -319,8 +323,17 @@ function dashUpdate() {
 
   // Dibujar velocímetro SVG (animado — Mejora 5)
   $('gauge-score').style.color = '#fff';
-  animateGaugeScore(score, scoreColor);
-  $('gauge-label').textContent = scoreLabel;
+  if (sinDatos()) {
+    // Sin animación: animateGaugeScore termina escribiendo "0/1000" y
+    // pisaría el guion.
+    if (_gaugeAnim) { cancelAnimationFrame(_gaugeAnim); _gaugeAnim = null; }
+    drawGauge(0, '#7a9490');
+    $('gauge-score').textContent = '—';
+    $('gauge-label').textContent = 'Sin datos aún';
+  } else {
+    animateGaugeScore(score, scoreColor);
+    $('gauge-label').textContent = scoreLabel;
+  }
   $('gauge-label').className   = 'gauge-label';
   $('gauge-label').style.cssText = 'background:rgba(255,255,255,.15);color:#fff;';
 
@@ -346,7 +359,13 @@ function dashUpdate() {
   // PART 3 — INSIGHT 1: Alerta contextual bajo el velocímetro según score
   const insightScore = $('score-insight');
   insightScore.style.display = 'flex';
-  if (score < 450) {
+  if (sinDatos()) {
+    // Sin datos, el score daría 300 ("Requiere Atención") solo porque los
+    // gastos figuran como el 100% de un ingreso de 0. Castigar a alguien
+    // que todavía no ingresó nada no informa: confunde.
+    insightScore.className = 'alert';
+    insightScore.innerHTML = `<span class="alert-icon">👋</span><div><strong>Todavía no hay datos.</strong> Ve a <a href="#" onclick="navigate('presupuesto',document.querySelector('.nav-pill'))" style="color:inherit;text-decoration:underline">Presupuesto</a> e ingresa tu ingreso neto y tus gastos del mes. Tu score aparece apenas tengas lo primero.</div>`;
+  } else if (score < 450) {
     insightScore.className = 'alert danger';
     insightScore.innerHTML = `<span class="alert-icon">🚨</span><div><strong>Acción urgente:</strong> Tu perfil financiero requiere atención inmediata. Comienza por revisar el <strong>Método Bola de Nieve</strong> en la sección <a href="#" onclick="navigate('educativa',document.querySelector('.nav-pill'))" style="color:inherit;text-decoration:underline">Aprende y Crece</a> para empezar a salir de deudas hoy.</div>`;
   } else if (score < 650) {
@@ -833,19 +852,81 @@ const catConfig = [
 ];
 
 // ► Estado inicial de budgetRows (se sobrescribe con localStorage si existe)
-let budgetRows = [
-  { cat:0, desc:'Arriendo / dividendo',          presup:250000, real:250000 },
-  { cat:1, desc:'Supermercado + delivery',        presup:120000, real:138000 },
-  { cat:2, desc:'Transporte público / bencina',   presup:55000,  real:52000  },
-  { cat:3, desc:'Luz, agua, internet, gas',       presup:48000,  real:44000  },
-  { cat:4, desc:'Streaming + salidas',            presup:35000,  real:42000  },
-  { cat:5, desc:'Medicamentos / consultas',       presup:20000,  real:15000  },
-];
+/* Presupuesto de ejemplo. NO se carga solo: antes arrancaba precargado y
+   quien abría la app por primera vez veía el presupuesto de otra persona
+   sin saber si debía borrarlo o construir encima. Ahora es opt-in, con
+   cargarEjemplo(), y mientras está activo se avisa en pantalla. */
+const DATOS_EJEMPLO = {
+  ingreso: 900000,
+  deuda  : 320000,
+  filas  : [
+    { cat:0, desc:'Arriendo / dividendo',          presup:250000, real:250000 },
+    { cat:1, desc:'Supermercado + delivery',        presup:120000, real:138000 },
+    { cat:2, desc:'Transporte público / bencina',   presup:55000,  real:52000  },
+    { cat:3, desc:'Luz, agua, internet, gas',       presup:48000,  real:44000  },
+    { cat:4, desc:'Streaming + salidas',            presup:35000,  real:42000  },
+    { cat:5, desc:'Medicamentos / consultas',       presup:20000,  real:15000  },
+  ]
+};
+
+let budgetRows = [];
+let modoEjemplo = false;
+
+/** Carga el presupuesto de ejemplo y lo marca como tal. */
+function cargarEjemplo() {
+  budgetRows = DATOS_EJEMPLO.filas.map(f => ({ ...f }));
+  $('b-ingreso').value = DATOS_EJEMPLO.ingreso;
+  $('b-deuda').value   = DATOS_EJEMPLO.deuda;
+  modoEjemplo = true;
+  try { localStorage.setItem(LS.ejemplo, '1'); } catch(e) {}
+  renderBudgetTable(); budgetCalc(); dashUpdate(); actualizarAvisoEjemplo(); saveAll();
+}
+
+/** Deja el presupuesto en blanco para empezar de cero. */
+function limpiarEjemplo() {
+  budgetRows = [];
+  $('b-ingreso').value = '';
+  $('b-deuda').value   = '';
+  modoEjemplo = false;
+  try { localStorage.removeItem(LS.ejemplo); } catch(e) {}
+  renderBudgetTable(); budgetCalc(); dashUpdate(); actualizarAvisoEjemplo(); saveAll();
+}
+
+/** Muestra u oculta el aviso de "datos de ejemplo" en el panel. */
+function actualizarAvisoEjemplo() {
+  const aviso = $('aviso-ejemplo');
+  if (aviso) aviso.style.display = modoEjemplo ? 'flex' : 'none';
+}
+
+/** ¿El usuario todavía no cargó nada propio? */
+function sinDatos() {
+  return budgetRows.length === 0 && !(parseFloat($('b-ingreso').value) > 0);
+}
 
 /** Renderiza la tabla de presupuesto en el DOM */
 function renderBudgetTable() {
   const tbody = $('budget-tbody');
   tbody.innerHTML = '';
+
+  // Estado vacío: en vez de una tabla en blanco, ofrecer los dos caminos
+  if (budgetRows.length === 0) {
+    tbody.innerHTML = `
+      <tr><td colspan="6" class="budget-vacio">
+        <div class="budget-vacio-ico" aria-hidden="true">📋</div>
+        <div class="budget-vacio-tit">Tu presupuesto está vacío</div>
+        <div class="budget-vacio-sub">
+          Agrega tus gastos del mes, o mira primero un ejemplo armado para
+          entender cómo funciona.
+        </div>
+        <div class="budget-vacio-btns">
+          <button class="btn btn-primary btn-sm" onclick="addBudgetRow()">+ Agregar mi primer gasto</button>
+          <button class="btn btn-outline btn-sm" onclick="cargarEjemplo()">Ver un ejemplo</button>
+        </div>
+      </td></tr>`;
+    budgetCalc();
+    return;
+  }
+
   budgetRows.forEach((row, i) => {
     const diff      = row.real - row.presup;
     const diffClass = diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
@@ -900,7 +981,11 @@ function budgetCalc() {
   const rateEl = $('b-rate-bar');
   rateEl.style.width      = Math.min(rate, 100) + '%';
   rateEl.style.background = rate > 85 ? '#ef4444' : rate > 65 ? '#f59e0b' : '#1da077';
-  $('b-rate-text').textContent = `Usas el ${rate}% de tus ingresos en gastos. ${rate > 85 ? '⚠️ Nivel crítico.' : rate > 65 ? 'Poco margen de ahorro.' : '✅ Rango saludable.'}`;
+  // Sin datos, un "0% de gastos ✅ Rango saludable" es engañoso: no hay
+  // nada que evaluar todavía.
+  $('b-rate-text').textContent = sinDatos()
+    ? 'Ingresa tu ingreso neto y tus gastos para ver tu tasa de gasto.'
+    : `Usas el ${rate}% de tus ingresos en gastos. ${rate > 85 ? '⚠️ Nivel crítico.' : rate > 65 ? 'Poco margen de ahorro.' : '✅ Rango saludable.'}`;
 
   // Barras de ejecución por categoría
   const catMap = {};
@@ -2437,6 +2522,9 @@ renderVenc();
 
 // Renderizar dashboard (lee de budgetRows recién cargados)
 dashUpdate();
+
+// Mostrar el aviso si lo cargado es el presupuesto de ejemplo
+actualizarAvisoEjemplo();
 
 // Renderizar simulador con valores restaurados
 simUpdate();

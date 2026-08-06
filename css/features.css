@@ -842,3 +842,42 @@ body.dark .fb-fab:hover { background: var(--green-400); }
   color: var(--ink); margin-bottom: .5rem;
 }
 .fb-done-sub { font-size: 13.5px; color: var(--ink-3); line-height: 1.6; margin-bottom: 1.5rem; }
+
+/* ============================================================
+   ESTADO VACÍO Y MODO EJEMPLO
+   El presupuesto ya no arranca precargado: quien abría la app veía
+   datos de otra persona sin saberlo. Ahora el ejemplo es opt-in y
+   mientras esté activo se avisa.
+   ============================================================ */
+.aviso-ejemplo {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; margin-bottom: 1.25rem;
+  background: var(--amber-50); border: 1.5px solid var(--amber-100);
+  border-radius: var(--r-md);
+}
+.aviso-ejemplo-ico { font-size: 20px; line-height: 1; flex-shrink: 0; }
+.aviso-ejemplo-txt { flex: 1; font-size: 13px; color: var(--ink-3); line-height: 1.55; }
+.aviso-ejemplo-txt strong { color: var(--amber-500); }
+.aviso-ejemplo .btn { flex-shrink: 0; }
+body.dark .aviso-ejemplo-txt strong { color: var(--amber-400); }
+
+@media(max-width:600px) {
+  .aviso-ejemplo { flex-wrap: wrap; }
+  .aviso-ejemplo-txt { min-width: 100%; order: 2; }
+  .aviso-ejemplo .btn { order: 3; width: 100%; }
+}
+
+/* Estado vacío de la tabla de presupuesto */
+.budget-vacio { text-align: center; padding: 2.5rem 1rem !important; }
+.budget-vacio-ico { font-size: 40px; margin-bottom: .5rem; opacity: .5; }
+.budget-vacio-tit {
+  font-family: var(--ff-head); font-size: 16px; font-weight: 700;
+  color: var(--ink-2); margin-bottom: .35rem;
+}
+.budget-vacio-sub {
+  font-size: 13px; color: var(--muted); line-height: 1.6;
+  max-width: 420px; margin: 0 auto 1.1rem;
+}
+.budget-vacio-btns {
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+}
