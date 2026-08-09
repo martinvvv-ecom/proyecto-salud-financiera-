@@ -276,6 +276,7 @@ function navigate(page, btn) {
   if (page === 'inversiones')    invUpdate();
   if (page === 'autos')          autosUpdate();
   if (page === 'emprendedores')  { siiCalc(); ivaCalc(); }
+  if (page === 'sueldo')         { sueldoCalc(); }
   if (page === 'about')          { runAboutCountUp(); }
   updateNavIndicator();
   updateMobileTitle();
@@ -3211,3 +3212,342 @@ function loadOfertas() {
   } catch(e) { ofertaRows = []; }
   renderOfertaForms();
 }
+/* ============================================================
+   MI SUELDO — Liquidación explicada y precio en horas de vida
+   ============================================================ */
+
+/* Parámetros legales chilenos. OJO: cambian todos los años, y las
+   comisiones de AFP cambian cuando una administradora las ajusta.
+   Están todos acá juntos justamente para que actualizarlos sea
+   editar un solo bloque. Valores referenciales 2026. */
+const PARAMS_SUELDO = {
+  afpObligatorio : 0.10,     // cotización obligatoria
+  saludFonasa    : 0.07,     // 7% legal
+  cesantia       : 0.006,    // AFC trabajador, contrato indefinido
+  topeImponibleUF: 87.8,     // tope AFP y salud
+  topeCesantiaUF : 131.8,    // tope seguro de cesantía
+  // Comisión que cobra cada AFP, sobre la renta imponible
+  afps: [
+    { nombre: 'AFP Uno',       comision: 0.0049 },
+    { nombre: 'AFP Modelo',    comision: 0.0058 },
+    { nombre: 'AFP PlanVital', comision: 0.0116 },
+    { nombre: 'AFP Habitat',   comision: 0.0127 },
+    { nombre: 'AFP Capital',   comision: 0.0144 },
+    { nombre: 'AFP Cuprum',    comision: 0.0144 },
+    { nombre: 'AFP Provida',   comision: 0.0145 },
+  ],
+  /* Impuesto único de segunda categoría. Los tramos se expresan en UTM
+     y el impuesto se calcula como base × factor − rebaja. */
+  tramos: [
+    { desdeUTM:   0,   hastaUTM:  13.5, factor: 0,      rebajaUTM:  0     },
+    { desdeUTM:  13.5, hastaUTM:  30,   factor: 0.04,   rebajaUTM:  0.54  },
+    { desdeUTM:  30,   hastaUTM:  50,   factor: 0.08,   rebajaUTM:  1.74  },
+    { desdeUTM:  50,   hastaUTM:  70,   factor: 0.135,  rebajaUTM:  4.49  },
+    { desdeUTM:  70,   hastaUTM:  90,   factor: 0.23,   rebajaUTM: 11.14  },
+    { desdeUTM:  90,   hastaUTM: 120,   factor: 0.304,  rebajaUTM: 17.80  },
+    { desdeUTM: 120,   hastaUTM: 310,   factor: 0.35,   rebajaUTM: 23.32  },
+    { desdeUTM: 310,   hastaUTM: Infinity, factor: 0.40, rebajaUTM: 38.82 },
+  ]
+};
+
+/**
+ * Calcula la liquidación a partir del sueldo bruto imponible.
+ * Devuelve cada descuento por separado para poder explicarlo, que es
+ * el punto: no basta con dar el líquido.
+ */
+function calcularLiquidacion(bruto, comisionAfp, saludPct) {
+  const P = PARAMS_SUELDO;
+  const topeImp = P.topeImponibleUF * indUF;
+  const topeAfc = P.topeCesantiaUF  * indUF;
+
+  // Las cotizaciones se calculan sobre la renta imponible topada
+  const imponible    = Math.min(bruto, topeImp);
+  const imponibleAfc = Math.min(bruto, topeAfc);
+
+  const afp      = imponible * P.afpObligatorio;
+  const comision = imponible * comisionAfp;
+  const salud    = imponible * saludPct;
+  const afc      = imponibleAfc * P.cesantia;
+
+  // Base tributable: bruto menos cotizaciones previsionales (sin comisión)
+  const baseTributable = bruto - afp - salud - afc;
+  const baseUTM = indUTM > 0 ? baseTributable / indUTM : 0;
+
+  const tramo = P.tramos.find(t => baseUTM > t.desdeUTM && baseUTM <= t.hastaUTM) || P.tramos[0];
+  const impuesto = Math.max(0, baseTributable * tramo.factor - tramo.rebajaUTM * indUTM);
+
+  const totalDesc = afp + comision + salud + afc + impuesto;
+  return {
+    bruto, imponible, afp, comision, salud, afc, impuesto,
+    baseTributable, baseUTM, tramo, totalDesc,
+    liquido: bruto - totalDesc,
+    topado : bruto > topeImp,
+    pctDesc: bruto > 0 ? (totalDesc / bruto) * 100 : 0
+  };
+}
+
+function sueldoCalc() {
+  const bruto = parseFloat($('sue-bruto')?.value) || 0;
+  const comi  = parseFloat($('sue-afp')?.value)   || 0;
+  const salud = (parseFloat($('sue-salud')?.value) || 7) / 100;
+  const cont  = $('sue-resultado');
+  if (!cont) return;
+
+  if (bruto <= 0) {
+    cont.innerHTML = `<div class="sue-vacio">Ingresa tu sueldo bruto para ver el desglose.</div>`;
+    _sueldoLiquido = 0;
+    horasCalc();
+    return;
+  }
+
+  const r = calcularLiquidacion(bruto, comi, salud);
+  _sueldoLiquido = r.liquido;
+
+  const fila = (icono, etiqueta, monto, detalle, clase) => `
+    <div class="sue-fila ${clase || ''}">
+      <div class="sue-fila-ico" aria-hidden="true">${icono}</div>
+      <div class="sue-fila-txt">
+        <div class="sue-fila-lbl">${etiqueta}</div>
+        <div class="sue-fila-det">${detalle}</div>
+      </div>
+      <div class="sue-fila-monto">−${fmt(Math.round(monto))}</div>
+    </div>`;
+
+  cont.innerHTML = `
+    <div class="sue-bruto-row">
+      <span>Sueldo bruto</span><strong>${fmt(Math.round(r.bruto))}</strong>
+    </div>
+    ${r.topado ? `<div class="f-hint" style="margin:-4px 0 10px">
+       Tu sueldo supera el tope imponible de ${PARAMS_SUELDO.topeImponibleUF} UF
+       (${fmt(Math.round(PARAMS_SUELDO.topeImponibleUF * indUF))}). Las cotizaciones
+       se calculan solo hasta ese tope.</div>` : ''}
+
+    ${fila('🏦', 'AFP — cotización obligatoria', r.afp,
+           `10% de tu renta imponible. Va a tu cuenta individual: es tuyo, no es un impuesto.`)}
+    ${fila('💼', 'AFP — comisión', r.comision,
+           `Lo que cobra la administradora por gestionar tu fondo. Es lo único que cambia entre AFP.`)}
+    ${fila('🏥', 'Salud', r.salud,
+           `${(salud*100).toFixed(1)}% de tu renta imponible.`)}
+    ${fila('🛟', 'Seguro de cesantía', r.afc,
+           `0,6% si tienes contrato indefinido. Tu empleador aporta otro 2,4%.`)}
+    ${fila('🧾', 'Impuesto único de segunda categoría', r.impuesto,
+           r.impuesto <= 0
+             ? `Tu base tributable son ${r.baseUTM.toFixed(1)} UTM, bajo las 13,5 UTM exentas. No pagas impuesto.`
+             : `Tramo de ${r.tramo.desdeUTM} a ${r.tramo.hastaUTM === Infinity ? '∞' : r.tramo.hastaUTM} UTM:
+                ${(r.tramo.factor*100).toFixed(1)}% menos una rebaja de ${fmt(Math.round(r.tramo.rebajaUTM * indUTM))}.`,
+           'sue-impuesto')}
+
+    <div class="sue-liquido">
+      <div>
+        <div class="sue-liquido-lbl">Esto es lo que te llega</div>
+        <div class="sue-liquido-sub">Te descuentan ${r.pctDesc.toFixed(1)}% del bruto</div>
+      </div>
+      <div class="sue-liquido-monto">${fmt(Math.round(r.liquido))}</div>
+    </div>`;
+
+  horasCalc();
+}
+
+/* ── Precio en horas de trabajo ───────────────────────────────
+   La jornada legal chilena bajó a 44 horas semanales en abril de
+   2026 (ley 21.561), y sigue bajando a 42 en 2028 y 40 en 2029. */
+let _sueldoLiquido = 0;
+
+function horasCalc() {
+  const precio  = parseFloat($('hrs-precio')?.value) || 0;
+  const jornada = parseFloat($('hrs-jornada')?.value) || 44;
+  const cont    = $('hrs-resultado');
+  if (!cont) return;
+
+  // Si no hay liquidación calculada, usar el ingreso del Presupuesto
+  const ingreso = _sueldoLiquido > 0
+    ? _sueldoLiquido
+    : (parseFloat($('b-ingreso')?.value) || 0);
+
+  if (ingreso <= 0 || precio <= 0) {
+    cont.innerHTML = `<div class="sue-vacio">${
+      ingreso <= 0
+        ? 'Calcula tu líquido arriba, o ingresa tu ingreso en Presupuesto.'
+        : 'Ingresa el precio de algo para verlo en horas de tu vida.'
+    }</div>`;
+    return;
+  }
+
+  const horasMes  = jornada * 52 / 12;          // semanas al año / meses
+  const valorHora = ingreso / horasMes;
+  const horas     = precio / valorHora;
+  const jornadas  = horas / (jornada / 5);      // días de trabajo
+
+  cont.innerHTML = `
+    <div class="hrs-resultado-box">
+      <div class="hrs-grande">${horas < 1 ? horas.toFixed(1) : Math.round(horas)} <span>horas</span></div>
+      <div class="hrs-sub">
+        de tu trabajo. Son <strong>${jornadas < 1 ? jornadas.toFixed(1) : Math.round(jornadas)} jornadas</strong>
+        completas, a ${fmt(Math.round(valorHora))} la hora.
+      </div>
+    </div>
+    <div class="f-hint">
+      Calculado sobre tu líquido y una jornada de ${jornada} horas semanales
+      (${Math.round(horasMes)} horas al mes).
+    </div>`;
+}
+
+/* ============================================================
+   ¿PAGO LA DEUDA O INVIERTO?
+   El simulador de deudas y el de inversiones ya existían, pero no
+   se hablaban. La pregunta real de quien tiene ambas cosas es cuál
+   de las dos, y los dos números necesarios ya están cargados.
+   ============================================================ */
+function deudaVsInversion() {
+  const cont = $('dvi-resultado');
+  if (!cont) return;
+
+  const retornoAnual = (parseFloat($('dvi-retorno')?.value) || 7) / 100;
+
+  if (!debtRows.length) {
+    cont.innerHTML = `<div class="sue-vacio">Agrega al menos una deuda arriba para comparar.</div>`;
+    return;
+  }
+
+  // Anualizar la tasa mensual de cada deuda: (1+i)^12 − 1
+  const filas = debtRows
+    .filter(d => d.tasa > 0)
+    .map(d => ({ ...d, anual: (Math.pow(1 + d.tasa / 100, 12) - 1) * 100 }))
+    .sort((a, b) => b.anual - a.anual);
+
+  if (!filas.length) {
+    cont.innerHTML = `<div class="sue-vacio">Ninguna de tus deudas tiene tasa registrada.</div>`;
+    return;
+  }
+
+  const rAnualPct = retornoAnual * 100;
+  const ganan     = filas.filter(f => f.anual > rAnualPct);
+  const peor      = filas[0];
+
+  cont.innerHTML = `
+    <table class="dvi-tabla">
+      <thead><tr>
+        <th scope="col">Deuda</th>
+        <th scope="col" style="text-align:right">Tasa mensual</th>
+        <th scope="col" style="text-align:right">Equivale al año</th>
+        <th scope="col" style="text-align:right">¿Qué conviene?</th>
+      </tr></thead>
+      <tbody>
+        ${filas.map(f => `<tr>
+          <td>${f.nombre}</td>
+          <td style="text-align:right">${f.tasa}%</td>
+          <td style="text-align:right;font-weight:700">${f.anual.toFixed(1)}%</td>
+          <td style="text-align:right;font-weight:600;color:${f.anual > rAnualPct ? 'var(--red-500)' : 'var(--green-600)'}">
+            ${f.anual > rAnualPct ? 'Pagar la deuda' : 'Invertir'}
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+
+    <div class="alert ${ganan.length ? 'warning' : 'success'}" style="margin-top:1rem">
+      <span class="alert-icon">${ganan.length ? '⚠️' : '✅'}</span>
+      <div>${ganan.length
+        ? `<strong>Paga primero la deuda.</strong> Tu ${peor.nombre} cuesta
+           <strong>${peor.anual.toFixed(1)}% al año</strong>, muy por encima del
+           ${rAnualPct.toFixed(1)}% que esperas ganar invirtiendo. Pagarla es un retorno
+           garantizado de ${peor.anual.toFixed(1)}%: ninguna inversión te ofrece eso sin riesgo.
+           ${ganan.length > 1 ? `Lo mismo aplica a ${ganan.length - 1} deuda(s) más.` : ''}`
+        : `<strong>Tus deudas son baratas.</strong> Ninguna supera el ${rAnualPct.toFixed(1)}%
+           que esperas ganar invirtiendo, así que invertir rinde más que adelantar pagos.
+           Mantén al día los pagos mínimos.`}
+      </div>
+    </div>
+
+    <div class="f-hint" style="margin-top:.5rem">
+      Una tasa de ${peor.tasa}% mensual no es ${(peor.tasa*12).toFixed(1)}% al año:
+      es ${peor.anual.toFixed(1)}%, porque los intereses se capitalizan mes a mes.
+      Es la diferencia que casi nadie calcula.
+    </div>`;
+}
+
+/* ============================================================
+   ¿QUÉ PASA SI…? — Prueba de estrés sobre los datos cargados
+   ============================================================ */
+function estresCalc() {
+  const cont = $('estres-resultado');
+  if (!cont) return;
+
+  const ing = parseFloat($('b-ingreso')?.value) || 0;
+  const gas = budgetRows.reduce((s, r) => s + (r.real || 0), 0);
+  const aho = Math.max(ing - gas, 0);
+
+  if (sinDatos() || gas <= 0) {
+    cont.innerHTML = `<div class="sue-vacio">Carga tu presupuesto para poner a prueba tus finanzas.</div>`;
+    return;
+  }
+
+  // Ahorro acumulado disponible: lo que el historial registró
+  const acumulado = historialOrdenado().reduce((s, h) => s + h.ahorro, 0) || aho;
+
+  const meses    = parseInt($('estres-meses')?.value)   || 3;
+  const alzaPct  = parseFloat($('estres-alza')?.value)  || 10;
+  const imprev   = parseFloat($('estres-gasto')?.value) || 500000;
+
+  // Escenario 1: sin ingresos N meses
+  const mesesQueAguanta = gas > 0 ? acumulado / gas : 0;
+  const sobrevive       = mesesQueAguanta >= meses;
+
+  // Escenario 2: sube un gasto fijo
+  const mayorGasto = budgetRows.reduce((m, r) => (r.real > (m?.real || 0) ? r : m), null);
+  const alza       = mayorGasto ? mayorGasto.real * (alzaPct / 100) : 0;
+  const ahorroTras = aho - alza;
+
+  // Escenario 3: gasto imprevisto
+  const cubre = acumulado >= imprev;
+
+  const tarjeta = (icono, titulo, veredicto, ok, detalle) => `
+    <div class="estres-card ${ok ? 'ok' : 'riesgo'}">
+      <div class="estres-ico" aria-hidden="true">${icono}</div>
+      <div class="estres-tit">${titulo}</div>
+      <div class="estres-veredicto">${veredicto}</div>
+      <div class="estres-det">${detalle}</div>
+    </div>`;
+
+  cont.innerHTML = `
+    <div class="estres-grid">
+      ${tarjeta('💼', `Pierdo mi trabajo ${meses} ${meses === 1 ? 'mes' : 'meses'}`,
+        sobrevive ? 'Aguantas' : 'No alcanzas',
+        sobrevive,
+        `Con ${fmt(Math.round(acumulado))} ahorrados y gastos de ${fmt(Math.round(gas))} al mes,
+         cubres <strong>${mesesQueAguanta.toFixed(1)} meses</strong>.
+         ${sobrevive ? 'Tu colchón resiste el escenario.'
+                     : `Te faltan ${fmt(Math.round(gas * meses - acumulado))} para llegar.`}`)}
+
+      ${tarjeta('🏠', `Mi mayor gasto sube ${alzaPct}%`,
+        ahorroTras > 0 ? 'Sigues ahorrando' : 'Quedas en rojo',
+        ahorroTras > 0,
+        mayorGasto
+          ? `${mayorGasto.desc} pasa de ${fmt(mayorGasto.real)} a ${fmt(Math.round(mayorGasto.real + alza))}.
+             Tu ahorro mensual quedaría en <strong>${fmt(Math.round(ahorroTras))}</strong>.`
+          : 'Sin gastos registrados.')}
+
+      ${tarjeta('🚑', `Me llega un gasto de ${fmt(imprev)}`,
+        cubre ? 'Lo cubres' : 'Tendrías que endeudarte',
+        cubre,
+        cubre
+          ? `Te quedarían ${fmt(Math.round(acumulado - imprev))} de colchón.`
+          : `Te faltarían ${fmt(Math.round(imprev - acumulado))}. Ese es exactamente
+             el hueco que llena un fondo de emergencia.`)}
+    </div>`;
+}
+
+/* Poblar el select de AFP desde PARAMS_SUELDO, para que agregar o
+   cambiar una administradora sea editar una sola lista. */
+(function poblarAFPs() {
+  const sel = $('sue-afp');
+  if (!sel) return;
+  sel.innerHTML = PARAMS_SUELDO.afps
+    .map(a => `<option value="${a.comision}">${a.nombre} — ${(a.comision*100).toFixed(2)}%</option>`)
+    .join('');
+  sel.value = PARAMS_SUELDO.afps.find(a => a.nombre === 'AFP Modelo').comision;
+})();
+
+// Inicializar las herramientas nuevas
+sueldoCalc();
+deudaVsInversion();
+estresCalc();

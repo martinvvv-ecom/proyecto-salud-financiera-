@@ -64,6 +64,7 @@
     <button class="nav-pill" onclick="navigate('presupuesto',this)"><span>📋</span> Presupuesto</button>
     <button class="nav-pill" onclick="navigate('inversiones',this)"><span>📈</span> Inversiones</button>
     <button class="nav-pill" onclick="navigate('autos',this)"><span>🚗</span> Autos</button>
+    <button class="nav-pill" onclick="navigate('sueldo',this)"><span>💵</span> Mi Sueldo</button>
     <button class="nav-pill" onclick="navigate('emprendedores',this)"><span>🚀</span> Emprendedores</button>
     <button class="nav-pill" onclick="navigate('about',this)"><span>ℹ️</span> Acerca de</button>
     <div id="nav-indicator"></div>
@@ -115,6 +116,7 @@
   <button class="nav-pill" onclick="navigate('presupuesto',this);closeMobileMenu()"><span>📋</span> Presupuesto Mensual</button>
   <button class="nav-pill" onclick="navigate('inversiones',this);closeMobileMenu()"><span>📈</span> Inversiones & APV</button>
   <button class="nav-pill" onclick="navigate('autos',this);closeMobileMenu()"><span>🚗</span> Comparador Automotriz</button>
+  <button class="nav-pill" onclick="navigate('sueldo',this);closeMobileMenu()"><span>💵</span> Mi Sueldo</button>
   <button class="nav-pill" onclick="navigate('emprendedores',this);closeMobileMenu()"><span>🚀</span> Emprendedores</button>
   <button class="nav-pill" onclick="navigate('about',this);closeMobileMenu()"><span>ℹ️</span> Acerca de</button>
   <!-- Indicadores en drawer móvil -->
@@ -272,6 +274,29 @@
     <div id="trend-box" style="height:150px;position:relative">
       <canvas id="trend-chart"></canvas>
     </div>
+  </div>
+
+  <!-- Prueba de estrés sobre los datos que el usuario ya cargó -->
+  <div class="card">
+    <div class="card-title">🌪️ ¿Qué pasa si…?</div>
+    <p class="card-sub">Pon a prueba tus finanzas contra tres golpes que le pasan a cualquiera. Se calcula con los datos que ya tienes cargados.</p>
+
+    <div class="estres-controles">
+      <div class="f-group">
+        <label class="f-label" for="estres-meses">Meses sin ingresos</label>
+        <input type="number" class="f-input" id="estres-meses" value="3" min="1" max="24" oninput="estresCalc()">
+      </div>
+      <div class="f-group">
+        <label class="f-label" for="estres-alza">Alza de tu mayor gasto (%)</label>
+        <input type="number" class="f-input" id="estres-alza" value="10" min="1" max="100" oninput="estresCalc()">
+      </div>
+      <div class="f-group">
+        <label class="f-label" for="estres-gasto">Gasto imprevisto ($)</label>
+        <input type="number" class="f-input" id="estres-gasto" value="500000" min="0" step="50000" oninput="estresCalc()">
+      </div>
+    </div>
+
+    <div id="estres-resultado"></div>
   </div>
 
 </section>
@@ -574,6 +599,21 @@
         <p class="tasas-ref-nota">⚠️ <strong>Tasas referenciales</strong> basadas en datos de mercado enero–mayo 2026. Las tasas reales dependen del monto, plazo e historial crediticio. Confirma siempre con la institución antes de firmar. Fuente: CMF Chile.</p>
       </div>
     </details>
+  </div>
+
+  <!-- ¿Pago la deuda o invierto? Conecta este módulo con el de Inversiones -->
+  <div class="card">
+    <div class="card-title">⚖️ ¿Pago la deuda o invierto?</div>
+    <p class="card-sub">La pregunta que casi nadie calcula. Comparamos lo que te cuesta cada deuda contra lo que esperas ganar invirtiendo.</p>
+
+    <div class="f-group" style="max-width:320px">
+      <label class="f-label" for="dvi-retorno">Retorno anual que esperas de tu inversión (%)</label>
+      <input type="number" class="f-input" id="dvi-retorno" value="7" min="0" max="30" step="0.5"
+             oninput="deudaVsInversion()">
+      <div class="f-hint">Referencia: depósito a plazo ~5%, fondo mutuo ~7%, S&amp;P 500 histórico ~10%.</div>
+    </div>
+
+    <div id="dvi-resultado"></div>
   </div>
 
 </section>
@@ -1138,6 +1178,80 @@
      PÁGINA 7: EMPRENDEDORES / FREELANCERS
      FEAT D: Calculadora SII Boletas + Calculadora IVA E-commerce
      ================================================================ -->
+<!-- ================================================================
+     MI SUELDO — Liquidación explicada y precio en horas
+     ================================================================ -->
+<section class="page" id="page-sueldo">
+
+  <div class="emp-hero">
+    <div class="emp-hero-emoji">💵</div>
+    <div class="emp-hero-text">
+      <h2>Mi Sueldo</h2>
+      <p>Te ofrecen un sueldo y llega otro a tu cuenta. Acá ves exactamente adónde se fue cada peso, y cuánto de tu vida cuesta lo que compras.</p>
+    </div>
+  </div>
+
+  <div class="g2">
+
+    <!-- Liquidación de sueldo -->
+    <div class="card">
+      <div class="card-title">🧾 Tu liquidación, explicada</div>
+      <p class="card-sub">Ingresa el sueldo bruto que te ofrecieron y desglosamos cada descuento.</p>
+
+      <div class="f-group">
+        <label class="f-label" for="sue-bruto">Sueldo bruto mensual ($)</label>
+        <input type="number" class="f-input" id="sue-bruto" placeholder="Ej: 800000" min="0"
+               oninput="sueldoCalc()">
+      </div>
+
+      <div class="f-row2">
+        <div class="f-group">
+          <label class="f-label" for="sue-afp">Tu AFP</label>
+          <select class="f-select" id="sue-afp" onchange="sueldoCalc()"></select>
+          <div class="f-hint">La comisión es lo único que cambia entre AFP.</div>
+        </div>
+        <div class="f-group">
+          <label class="f-label" for="sue-salud">Salud (%)</label>
+          <input type="number" class="f-input" id="sue-salud" value="7" min="7" max="20" step="0.1"
+                 oninput="sueldoCalc()">
+          <div class="f-hint">7% es el mínimo legal (Fonasa). Con isapre suele ser más.</div>
+        </div>
+      </div>
+
+      <div id="sue-resultado" class="sue-resultado"></div>
+
+      <div class="f-hint" style="margin-top:1rem">
+        ⚠️ Valores referenciales 2026. Los topes imponibles y las comisiones de AFP
+        cambian cada año. Usa esto para entender la estructura de tu liquidación,
+        no como cálculo oficial.
+      </div>
+    </div>
+
+    <!-- Precio en horas de vida -->
+    <div class="card">
+      <div class="card-title">⏱️ ¿Cuánto de tu vida cuesta?</div>
+      <p class="card-sub">Todo precio es tiempo. Convierte cualquier compra en horas de tu trabajo.</p>
+
+      <div class="f-group">
+        <label class="f-label" for="hrs-precio">Precio de lo que quieres comprar ($)</label>
+        <input type="number" class="f-input" id="hrs-precio" placeholder="Ej: 80000" min="0"
+               oninput="horasCalc()">
+      </div>
+
+      <div class="f-group">
+        <label class="f-label" for="hrs-jornada">Tu jornada semanal (horas)</label>
+        <input type="number" class="f-input" id="hrs-jornada" value="44" min="1" max="60"
+               oninput="horasCalc()">
+        <div class="f-hint">La jornada legal en Chile bajó a 44 horas en abril de 2026, y sigue bajando a 42 en 2028 y 40 en 2029.</div>
+      </div>
+
+      <div id="hrs-resultado"></div>
+    </div>
+
+  </div>
+
+</section>
+
 <section class="page" id="page-emprendedores">
 
   <div class="emp-hero">
