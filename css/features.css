@@ -1059,3 +1059,30 @@ main:focus, main:focus-visible { outline: none; }
 .estres-card.ok     .estres-veredicto { color: var(--green-600); }
 .estres-card.riesgo .estres-veredicto { color: var(--red-500);   }
 .estres-det { font-size: 12px; color: var(--ink-3); line-height: 1.6; }
+
+/* ============================================================
+   TOPBAR EN MÓVIL — reparto del espacio
+   El título de sección estaba centrado en absoluto (left:50%). Con el
+   badge de beta dentro del logo, el logo pasó a ocupar 178px de los
+   ~185 disponibles a 375px de ancho, y el título terminaba montado
+   sobre el badge por la izquierda y sobre el avatar por la derecha.
+   Acá deja de estar centrado y pasa a repartirse el espacio con flex.
+   ============================================================ */
+.logo .beta-badge-txt { color: inherit; }
+
+@media(max-width:680px) {
+  .mobile-section-title {
+    position: static; left: auto; transform: none;
+    flex: 1 1 auto; min-width: 0; text-align: left;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* En pantalla chica el badge queda como 🧪 a secas. El texto completo
+     sigue disponible en el atributo title al mantener pulsado. */
+  .logo .beta-badge-txt { display: none; }
+  .logo .beta-badge { padding: 3px 6px; }
+}
+
+/* Bajo 420px ni el wordmark cabe: queda el ícono, el 🧪 y la sección */
+@media(max-width:420px) {
+  .logo .logo-text { display: none; }
+}
