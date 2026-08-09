@@ -254,8 +254,22 @@
   <div id="dash-alerts"></div>
 
   <div class="card">
-    <div style="font-size:14px;font-weight:600;margin-bottom:1rem;color:var(--ink-2)">Tendencia de ahorro — últimos 6 meses</div>
-    <div style="height:150px;position:relative">
+    <div style="font-size:14px;font-weight:600;margin-bottom:1rem;color:var(--ink-2)">Tendencia de ahorro — tus últimos meses</div>
+
+    <!-- Comparación con el mes anterior registrado -->
+    <div class="comparativa-mes" id="comparativa-mes" style="display:none"></div>
+
+    <!-- Con menos de dos meses registrados todavía no hay tendencia -->
+    <div class="trend-empty" id="trend-empty" style="display:none">
+      <span class="trend-empty-ico" aria-hidden="true">📈</span>
+      <div>
+        <strong>Aún no hay tendencia que mostrar.</strong>
+        Tu ahorro de este mes ya quedó guardado. Cambia el mes en Presupuesto,
+        registra otro, y acá vas a ver cómo evoluciona.
+      </div>
+    </div>
+
+    <div id="trend-box" style="height:150px;position:relative">
       <canvas id="trend-chart"></canvas>
     </div>
   </div>

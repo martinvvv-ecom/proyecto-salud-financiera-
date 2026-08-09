@@ -47,8 +47,62 @@ const LS = {
   badges : 'sf_badges',         // EDIT 4: gamificación — badges ganados
   debts  : 'sf_debts',          // Simulador de deudas
   ofertas: 'sf_ofertas',        // Comparador de ofertas
-  ejemplo: 'sf_modo_ejemplo'    // El presupuesto cargado es el de ejemplo
+  ejemplo: 'sf_modo_ejemplo',   // El presupuesto cargado es el de ejemplo
+  hist   : 'sf_historial'       // Foto mensual: ingreso, gasto, ahorro, deuda, score
 };
+
+/* ============================================================
+   HISTORIAL MENSUAL
+   Antes la app no tenía memoria: cada mes sobrescribía al anterior
+   y el gráfico de "últimos 6 meses" mostraba el ahorro actual
+   multiplicado por factores fijos, o sea una historia que nunca
+   ocurrió. Acá se guarda una foto real por mes.
+   ============================================================ */
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+               'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+let historial = {};   // { '2026-03': {ingreso, gasto, ahorro, deuda, score, ts} }
+
+/** Clave del mes seleccionado en el Presupuesto, formato AAAA-MM. */
+function claveMesActual() {
+  const i = MESES.indexOf($('b-mes').value);
+  const mes = i >= 0 ? i : new Date().getMonth();
+  return `${new Date().getFullYear()}-${String(mes + 1).padStart(2, '0')}`;
+}
+
+/** Etiqueta corta para el gráfico: "Mar", "Abr"… */
+function etiquetaMes(clave) {
+  const m = parseInt(clave.split('-')[1], 10) - 1;
+  return (MESES[m] || '').slice(0, 3);
+}
+
+/** Guarda la foto del mes seleccionado. Se llama desde saveAll(). */
+function guardarSnapshot() {
+  // Con el presupuesto vacío no hay nada que registrar: guardar ceros
+  // ensuciaría la tendencia con meses que el usuario nunca usó.
+  if (sinDatos()) return;
+  const s = calcularScore();
+  historial[claveMesActual()] = {
+    ingreso: s.ing,
+    gasto  : s.gas,
+    ahorro : s.aho,
+    deuda  : s.deu,
+    score  : s.score,
+    ts     : Date.now()
+  };
+  try { localStorage.setItem(LS.hist, JSON.stringify(historial)); } catch(e) {}
+}
+
+/** Meses con datos, del más antiguo al más reciente. */
+function historialOrdenado() {
+  return Object.keys(historial).sort().map(k => ({ clave: k, ...historial[k] }));
+}
+
+/** Borra todo el historial (lo usa limpiarEjemplo). */
+function borrarHistorial() {
+  historial = {};
+  try { localStorage.removeItem(LS.hist); } catch(e) {}
+}
 
 // EDIT 4: badges ganados (se carga de localStorage)
 let earnedBadges = [];
@@ -63,6 +117,9 @@ function saveAll() {
     localStorage.setItem(LS.venc,   JSON.stringify(vencRows));
     localStorage.setItem(LS.badges, JSON.stringify(earnedBadges)); // EDIT 4
   } catch(e) { console.warn('localStorage no disponible:', e); }
+  // Registrar la foto del mes. Va acá y no en dashUpdate porque saveAll
+  // se dispara al cambiar un dato, no en cada repintado.
+  guardarSnapshot();
 }
 
 /** Guarda los parámetros del simulador en localStorage */
@@ -90,6 +147,9 @@ function loadFromStorage() {
 
     // Si lo guardado venía del presupuesto de ejemplo, seguir avisándolo
     modoEjemplo = localStorage.getItem(LS.ejemplo) === '1';
+
+    const savedHist = localStorage.getItem(LS.hist);
+    if (savedHist) historial = JSON.parse(savedHist) || {};
 
     const savedIncome = localStorage.getItem(LS.income);
     if (savedIncome) $('b-ingreso').value = savedIncome;
@@ -442,12 +502,47 @@ function dashUpdate() {
   $('dash-rule').innerHTML = `<div style="margin-bottom:4px"><strong>Regla 50/30/20:</strong></div>
     <div>Destinas el <strong>${rulePct}%</strong> de tus ingresos a gastos. ${rulePct <= 50 ? '✅ Dentro del rango ideal.' : rulePct <= 70 ? '⚠️ Un poco elevado.' : '🔴 Por encima del límite recomendado.'}</div>`;
 
-  // Línea de tendencia (últimos 6 meses simulados desde ahorro actual)
-  const months   = ['Oct', 'Nov', 'Dic', 'Ene', 'Feb', 'Mar'];
-  const saveData = [.70, .80, .60, .85, .90, 1.00].map(f => Math.max(aho * f, 0));
+  // Tendencia real: los últimos 6 meses que el usuario efectivamente
+  // registró. Antes esto mostraba `aho` multiplicado por factores fijos
+  // con meses hardcodeados, o sea una historia inventada.
+  const hist     = historialOrdenado().slice(-6);
+  const months   = hist.map(h => etiquetaMes(h.clave));
+  const saveData = hist.map(h => h.ahorro);
+
+  // Con menos de dos meses no hay tendencia que mostrar todavía
+  const avisoTend = $('trend-empty');
+  if (avisoTend) avisoTend.style.display = hist.length < 2 ? 'flex' : 'none';
+  const cajaTend = $('trend-box');
+  if (cajaTend) cajaTend.style.display = hist.length < 2 ? 'none' : '';
+  if (hist.length < 2) { if (trendChart) { trendChart.destroy(); trendChart = null; } }
+
+  // Comparación contra el mes anterior registrado. Es la pregunta que
+  // importa en finanzas personales: no "cuánto tengo" sino "voy mejor".
+  const cmp = $('comparativa-mes');
+  if (cmp) {
+    const previo = historialOrdenado().filter(h => h.clave !== claveMesActual()).slice(-1)[0];
+    if (!previo) {
+      cmp.style.display = 'none';
+    } else {
+      const dAho = aho - previo.ahorro;
+      const dSco = (s.score ?? 0) - (previo.score ?? 0);
+      const flecha = v => v > 0 ? '▲' : v < 0 ? '▼' : '=';
+      const color  = v => v > 0 ? 'var(--green-600)' : v < 0 ? 'var(--red-500)' : 'var(--muted)';
+      cmp.style.display = 'flex';
+      cmp.innerHTML =
+        `<span class="cmp-lbl">vs ${MESES[parseInt(previo.clave.split('-')[1],10)-1]}</span>
+         <span class="cmp-item" style="color:${color(dAho)}">
+           ${flecha(dAho)} ${fmt(Math.abs(dAho))} de ahorro
+         </span>
+         <span class="cmp-item" style="color:${color(dSco)}">
+           ${flecha(dSco)} ${Math.abs(dSco)} pts de score
+         </span>`;
+    }
+  }
+
   const tCtx     = $('trend-chart').getContext('2d');
   if (trendChart) trendChart.destroy();
-  trendChart = new Chart(tCtx, {
+  trendChart = hist.length < 2 ? null : new Chart(tCtx, {
     type: 'line',
     data: { labels: months, datasets: [{ label: 'Ahorro disponible', data: saveData, borderColor: '#1da077', backgroundColor: 'rgba(29,160,119,.08)', fill: true, tension: 0.4, pointBackgroundColor: '#1da077', pointRadius: 4, borderWidth: 2.5 }] },
     options: {
@@ -909,6 +1004,8 @@ function limpiarEjemplo() {
   $('b-deuda').value   = '';
   modoEjemplo = false;
   try { localStorage.removeItem(LS.ejemplo); } catch(e) {}
+  // El historial del ejemplo no es del usuario: empezar de cero es de verdad
+  borrarHistorial();
   renderBudgetTable(); budgetCalc(); dashUpdate(); actualizarAvisoEjemplo(); saveAll();
 }
 
