@@ -6,7 +6,7 @@ Proyecto ABP — 4to Medio · The Almondale School Valle · 2026
 
 **Equipo:**
 - Martín Vergara Valenzuela — Arquitecto Web & Programador
-- Tomás Carrasco — Redactor Principal
+- Tomás Arriagada — Redactor Principal
 - Matías Toloza — Investigador Teórico
 
 ---
@@ -42,7 +42,7 @@ salud-financiera/
 
 ## 🎯 Características
 
-### Los 7 módulos originales
+### Los 9 módulos
 1. **Panel (Dashboard)** — Score Financiero 0-1000 + resumen ejecutivo
 2. **Simulador de Créditos** — Cálculo de CAE con seguros
 3. **Aprende y Crece** — 6 módulos gamificados + glosario chileno
@@ -50,15 +50,20 @@ salud-financiera/
 5. **Inversiones & APV** — Metas libres + simulador AFP con APV
 6. **Comparador Automotriz** — Crédito tradicional vs. Compra Inteligente
 7. **Emprendedores** — Calculadoras SII, IVA e-commerce, importaciones
+8. **Mi Sueldo** — Liquidación explicada (AFP, salud) + precio en horas de vida
+9. **Acerca de** — Equipo, estadísticas y QR para la defensa
 
-### Nuevas funcionalidades (v2)
+### Beta pública (desde el 30 de julio de 2026)
 - ✨ **PWA Instalable** — Se agrega como app al celular
 - 👋 **Onboarding interactivo** — Tour guiado primera vez
 - 👤 **Perfil con avatar** — Login simulado con iniciales
 - 📤 **Compartir progreso** — Web Share API + portapapeles
-- ℹ️ **Página "Acerca de"** — Equipo, stats y QR para defensa
+- 🌪️ **Prueba de estrés** — "¿Qué pasa si...?" sobre los datos ya cargados
+- ⚖️ **¿Pago la deuda o invierto?** — Costo de la deuda vs. retorno esperado
+- ♿ **Accesibilidad** — Skip link, etiquetas ARIA y scope en tablas
+- 💬 **Canal de feedback** — Formulario integrado vía Netlify Forms
 - 🎨 **Estructura modular** — CSS/JS separados, listos para producción
-- 🐛 **Bugs corregidos** — Tasa SII 2026 actualizada a 14,5%
+- 🐛 **Bugs corregidos** — Tasa SII 2026 a 14,5%, PDF de la Ficha Clínica, cálculo del Score unificado
 
 ---
 
@@ -74,7 +79,8 @@ http://localhost:8000
 ```
 
 ### Producción
-Ver `GUIA_DEPLOY.md` para deploy paso a paso en Netlify o GitHub Pages.
+Desplegado en Netlify con integración continua: cada push a `main` publica automáticamente.
+Ver `GUIA_DEPLOY.md` para el detalle del proceso.
 
 ---
 
