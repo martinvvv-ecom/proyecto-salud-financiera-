@@ -4,21 +4,23 @@
                 Network-first para APIs externas (mindicador.cl)
    ================================================================ */
 
-const CACHE_NAME = 'salud-financiera-v11';
+const CACHE_NAME = 'salud-financiera-v17';
 const CORE_ASSETS = [
   './',
   './index.html',
   './css/app.css',
   './css/features.css',
+  './css/estructura.css',
+  './js/params-cl.js',
+  './js/movimientos.js',
   './js/app.js',
   './js/features.js',
   './manifest.json',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
   // CDNs externos críticos
-  'https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap',
-  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
+  'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap',
+  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js'
 ];
 
 // ── Install: precargar assets críticos ──
@@ -72,7 +74,27 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Estrategia cache-first para assets propios
+  // Archivos propios (HTML, CSS, JS): network-first. Con cache-first, si
+  // alguien olvidaba subir CACHE_NAME, los usuarios se quedaban con la
+  // versión vieja para siempre. Ahora siempre se pide la última y la
+  // caché queda solo para cuando no hay conexión.
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      fetch(event.request)
+        .then(res => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(event.request).then(c =>
+          c || (event.request.destination === 'document' ? caches.match('./index.html') : undefined)))
+    );
+    return;
+  }
+
+  // Librerías y fuentes de CDN (versionadas): cache-first
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;

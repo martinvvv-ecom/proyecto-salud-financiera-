@@ -9,6 +9,48 @@
    6. Modo presentación (auto-tour)
    ================================================================ */
 
+/* ============================================================
+   MODALES ACCESIBLES
+   Al abrir: el foco entra al modal y Tab no se escapa de él. Al cerrar:
+   vuelve al botón que lo abrió. Escape cierra.
+   ============================================================ */
+const SF_MODAL = {
+  _abierto: null,
+  _origen : null,
+  _cerrar : null,
+  abrir(modal, cerrar) {
+    if (!modal) return;
+    this._origen  = document.activeElement;
+    this._abierto = modal;
+    this._cerrar  = cerrar;
+    modal.classList.add('open');
+    const foco = modal.querySelector('input, button:not(.modal-close), [href], select, textarea') || modal.querySelector('button');
+    setTimeout(() => foco?.focus(), 30);
+    document.addEventListener('keydown', this._tecla);
+  },
+  cerrar(modal) {
+    if (!modal || !modal.classList.contains('open')) return;
+    modal.classList.remove('open');
+    if (this._abierto === modal) {
+      document.removeEventListener('keydown', this._tecla);
+      this._abierto = null;
+      this._origen?.focus?.();
+    }
+  },
+  _tecla(e) {
+    const m = SF_MODAL._abierto;
+    if (!m) return;
+    if (e.key === 'Escape') { SF_MODAL._cerrar?.(); return; }
+    if (e.key !== 'Tab') return;
+    const f = [...m.querySelectorAll('a[href], button:not([disabled]), input:not([type="hidden"]), select, textarea')]
+      .filter(el => el.offsetParent !== null);
+    if (!f.length) return;
+    const primero = f[0], ultimo = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+    else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+  }
+};
+
 const SF_FEATURES = {
   // ────────────────────────────────────────────────────────────
   // CONFIG
@@ -21,31 +63,22 @@ const SF_FEATURES = {
 
   // Estado del onboarding
   onboardStep: 0,
+  // Tres pasos que dicen qué hacer, no cinco diapositivas de presentación
   onboardSteps: [
     {
-      emoji: '👋',
-      title: 'Bienvenido a Salud Financiera',
-      text: 'Tu plataforma personal para tomar el control de tus finanzas. Sin letra chica, sin complicaciones.'
+      emoji: '1',
+      title: 'Anota tu sueldo',
+      text: 'En Movimientos, toca "+" y anota lo que te llega al mes. Márcalo como "se repite cada mes" y no tendrás que volver a escribirlo.'
     },
     {
-      emoji: '📊',
-      title: 'Tu Score Financiero',
-      text: 'Recibe un puntaje de 0 a 1000 que mide tu salud financiera. Mientras más alto, mejor preparado estás.'
+      emoji: '2',
+      title: 'Anota tus gastos',
+      text: 'Cada gasto en segundos con el botón "+", o importa la cartola de tu banco en CSV para cargar el mes de una vez.'
     },
     {
-      emoji: '🧮',
-      title: 'Simula antes de firmar',
-      text: 'Calcula la CAE real de cualquier crédito y compara instituciones. Nunca más pagues de más.'
-    },
-    {
-      emoji: '📚',
-      title: 'Aprende mientras avanzas',
-      text: 'Módulos gamificados con quizzes, badges y un glosario financiero chileno completo.'
-    },
-    {
-      emoji: '🚀',
-      title: '¡Todo listo!',
-      text: 'Tus datos se guardan automáticamente en tu navegador. Privado y seguro. Empieza por el Presupuesto.'
+      emoji: '3',
+      title: 'Mira tu disponible y tu score',
+      text: 'En Inicio verás cuánto te queda para el mes y tu score de salud financiera, con la acción que más lo sube. Todo queda solo en este navegador.'
     }
   ],
 
@@ -67,15 +100,9 @@ const SF_FEATURES = {
     const done = localStorage.getItem(this.LS_KEYS.onboardDone);
     if (done === '1') return;
 
-    // Verificar si hay perfil; si no, mostrar onboarding después de crearlo
-    const hasProfile = !!localStorage.getItem(this.LS_KEYS.profile);
-    if (!hasProfile) {
-      // El onboarding se dispara desde el flujo de profile setup
-      this.showProfileSetup(() => this.startOnboarding());
-    } else {
-      // Tiene perfil pero no onboarding, mostrar
-      setTimeout(() => this.startOnboarding(), 400);
-    }
+    // Antes se pedía el nombre en un "inicio de sesión" simulado antes de
+    // mostrar nada. No hay cuentas: el nombre es opcional y está en Ajustes.
+    setTimeout(() => this.startOnboarding(), 400);
   },
 
   startOnboarding() {
@@ -83,8 +110,15 @@ const SF_FEATURES = {
     const overlay = document.createElement('div');
     overlay.className = 'splash-overlay';
     overlay.id = 'splash-overlay';
+    // Diálogo accesible: lector de pantalla, foco adentro y Escape cierra
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'onboard-title');
     overlay.innerHTML = this.renderOnboardCard();
     document.body.appendChild(overlay);
+    this._onboardTecla = e => { if (e.key === 'Escape') this.finishOnboarding(); };
+    document.addEventListener('keydown', this._onboardTecla);
+    setTimeout(() => overlay.querySelector('.onboard-next')?.focus(), 50);
   },
 
   renderOnboardCard() {
@@ -97,7 +131,7 @@ const SF_FEATURES = {
     return `
       <div class="onboard-card">
         <div class="onboard-emoji">${step.emoji}</div>
-        <div class="onboard-title">${step.title}</div>
+        <div class="onboard-title" id="onboard-title">${step.title}</div>
         <div class="onboard-text">${step.text}</div>
         <div class="onboard-dots">${dots}</div>
         <div class="onboard-actions">
@@ -105,7 +139,7 @@ const SF_FEATURES = {
             ${isLast ? '' : 'Saltar tutorial'}
           </button>
           <button class="onboard-next" onclick="SF_FEATURES.nextOnboard()">
-            ${isLast ? 'Comenzar ✨' : 'Siguiente →'}
+            ${isLast ? 'Empezar' : 'Siguiente →'}
           </button>
         </div>
       </div>
@@ -116,13 +150,14 @@ const SF_FEATURES = {
     if (this.onboardStep < this.onboardSteps.length - 1) {
       this.onboardStep++;
       const overlay = document.getElementById('splash-overlay');
-      if (overlay) overlay.innerHTML = this.renderOnboardCard();
+      if (overlay) { overlay.innerHTML = this.renderOnboardCard(); overlay.querySelector('.onboard-next')?.focus(); }
     } else {
       this.finishOnboarding();
     }
   },
 
   finishOnboarding() {
+    if (this._onboardTecla) { document.removeEventListener('keydown', this._onboardTecla); this._onboardTecla = null; }
     const overlay = document.getElementById('splash-overlay');
     if (overlay) {
       overlay.classList.add('hiding');
@@ -132,7 +167,7 @@ const SF_FEATURES = {
   },
 
   // ============================================================
-  // 2. PROFILE (LOGIN SIMULADO)
+  // 2. NOMBRE (opcional, solo para saludar; no hay cuentas)
   // ============================================================
   initProfile() {
     const profile = this.getProfile();
@@ -163,11 +198,11 @@ const SF_FEATURES = {
     if (profile && profile.name) {
       btn.classList.remove('empty');
       btn.textContent = this.getInitials(profile.name);
-      btn.title = `${profile.name} — Click para ver perfil`;
+      btn.title = `${profile.name} — tu nombre`;
     } else {
       btn.classList.add('empty');
-      btn.innerHTML = '👤';
-      btn.title = 'Crear perfil';
+      btn.innerHTML = '<svg class="ico" aria-hidden="true"><use href="#i-user"></use></svg>';
+      btn.title = 'Agregar tu nombre (opcional)';
     }
   },
 
@@ -181,19 +216,18 @@ const SF_FEATURES = {
     document.getElementById('profile-modal-avatar').textContent = this.getInitials(profile.name);
     document.getElementById('profile-modal-name').textContent = profile.name;
     document.getElementById('profile-modal-meta').textContent =
-      `Miembro desde ${new Date(profile.created).toLocaleDateString('es-CL', {day:'numeric', month:'long', year:'numeric'})}`;
-    modal.classList.add('open');
+      'Solo se usa para saludarte. Queda en este navegador.';
+    SF_MODAL.abrir(modal, () => this.closeProfileModal());
   },
 
   closeProfileModal() {
-    document.getElementById('profile-modal')?.classList.remove('open');
-    document.getElementById('profile-setup-modal')?.classList.remove('open');
+    SF_MODAL.cerrar(document.getElementById('profile-modal'));
+    SF_MODAL.cerrar(document.getElementById('profile-setup-modal'));
   },
 
   showProfileSetup(onDone) {
     const modal = document.getElementById('profile-setup-modal');
-    modal.classList.add('open');
-    document.getElementById('profile-name-input').focus();
+    SF_MODAL.abrir(modal, () => this.closeProfileModal());
     this._profileSetupCallback = onDone || null;
   },
 
@@ -214,7 +248,7 @@ const SF_FEATURES = {
   },
 
   logoutProfile() {
-    if (!confirm('¿Cerrar sesión? Tus datos del presupuesto se mantendrán guardados.')) return;
+    if (!confirm('¿Borrar tu nombre? Tus datos se mantienen.')) return;
     localStorage.removeItem(this.LS_KEYS.profile);
     this.renderProfileButton(null);
     this.closeProfileModal();
@@ -237,10 +271,26 @@ const SF_FEATURES = {
   },
 
   async shareReport() {
-    const profile = this.getProfile();
-    const score = document.getElementById('gauge-score')?.textContent || '—';
-    const text = `${profile?.name || 'Yo'} estoy mejorando mi salud financiera 💚\n\nMi Score actual: ${score}\n\nDescubre Salud Financiera, una plataforma gratuita para gestionar tus finanzas en Chile.`;
-    const url = window.location.href;
+    // El score sale del cálculo, no del texto del velocímetro: el DOM
+    // puede mostrar un número a mitad de animación (se llegó a
+    // compartir "0/1000") o uno simulado.
+    // Siempre el mes en curso, y sin puntaje si faltan datos
+    const s = sinDatos(mesHoy()) ? null : calcularScore(mesHoy());
+    const score = !s || s.incompleto ? null : s.score;
+    const text = score === null
+      ? `Estoy ordenando mis finanzas con Salud Financiera 💚\n\nUna plataforma gratuita para gestionar tus finanzas en Chile.`
+      : `Estoy mejorando mi salud financiera 💚\n\nMi Score actual: ${score}/1000\n\nDescubre Salud Financiera, una plataforma gratuita para gestionar tus finanzas en Chile.`;
+    const url = location.origin + location.pathname;
+    return this.compartir(text, url);
+  },
+
+  /** "Compartir enlace" comparte solo el enlace, sin el score. */
+  async shareLink() {
+    return this.compartir('Salud Financiera: una plataforma gratuita para gestionar tus finanzas en Chile.',
+      location.origin + location.pathname);
+  },
+
+  async compartir(text, url) {
 
     // Web Share API nativo
     if (navigator.share) {
@@ -409,17 +459,12 @@ const SF_FEEDBACK = {
   /* --- Abrir / cerrar ----------------------------------------- */
   open() {
     this.buildScales();
-    const modal = document.getElementById('fb-modal');
-    modal?.classList.add('open');
-    document.addEventListener('keydown', this._onKey);
+    SF_MODAL.abrir(document.getElementById('fb-modal'), () => SF_FEEDBACK.close());
   },
 
   close() {
-    document.getElementById('fb-modal')?.classList.remove('open');
-    document.removeEventListener('keydown', this._onKey);
+    SF_MODAL.cerrar(document.getElementById('fb-modal'));
   },
-
-  _onKey(e) { if (e.key === 'Escape') SF_FEEDBACK.close(); },
 
   /* --- Validación --------------------------------------------- */
   _error(msg) {

@@ -30,13 +30,13 @@
       "name": "Mi Presupuesto",
       "short_name": "Presupuesto",
       "description": "Ir directo al presupuesto mensual",
-      "url": "./index.html#presupuesto"
+      "url": "./index.html#/plan"
     },
     {
       "name": "Simulador de Créditos",
       "short_name": "Simulador",
       "description": "Calcular CAE de un crédito",
-      "url": "./index.html#simulador"
+      "url": "./index.html#/herramientas/creditos"
     }
   ]
 }
