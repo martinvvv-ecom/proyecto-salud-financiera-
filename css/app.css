@@ -758,6 +758,7 @@ body.dark .quick-rate-btn.active { background:var(--green-600); color:#fff; }
 .quiz-opt.correct  { background:#d8f7ed; border-color:var(--green-400); color:var(--green-800); font-weight:600; }
 .quiz-opt.wrong    { background:var(--red-50); border-color:var(--red-400); color:var(--red-500); }
 .quiz-opt:disabled { cursor:default; opacity:.85; }
+.quiz-opt.selected { background:var(--green-50); border-color:var(--green-500); color:var(--ink); font-weight:600; opacity:1; }
 .quiz-feedback { margin-top:.75rem; font-size:13px; color:var(--muted); line-height:1.6; }
 .quiz-next-btn { margin-top:.75rem; }
 .badge-earned {

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pruebas de cálculos · Salud Financiera</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; background: #f6f8f7; color: #0e1a17; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p { color: #5b6b66; margin: 0 0 16px; }
+  #resumen { font-weight: 800; font-size: 18px; margin: 12px 0; }
+  .ok { color: #12805c; } .fallo { color: #c4320a; }
+  li { margin: 4px 0; font-size: 14px; }
+  iframe { width: 1px; height: 1px; border: 0; position: absolute; left: -9999px; }
+</style>
+</head>
+<body>
+<h1>Pruebas de cálculos</h1>
+<p>Abre la app en un marco oculto y comprueba sus fórmulas con casos conocidos. Al terminar, deja tus datos del navegador exactamente como estaban.</p>
+<div id="resumen">Corriendo…</div>
+<ol id="lista"></ol>
+<script>
+/* Cada caso compara un resultado con el valor esperado. Para agregar uno:
+   prueba('qué se prueba', () => valorObtenido, valorEsperado). */
+const casos = [];
+const prueba = (nombre, fn, esperado, tolerancia = 0) => casos.push({ nombre, fn, esperado, tolerancia });
+
+function definirCasos(w) {
+  const P = w.eval('PARAMS_CL');   // const de nivel superior: no cuelga de window
+
+  // Boletas de honorarios (caso de ejemplo del SII)
+  prueba('Boleta de $100.000 bruto retiene $15.250', () => Math.round(100000 * P.retencionHonorarios.valor), 15250);
+  prueba('Para recibir $800.000 líquidos se cobran $943.953', () => Math.round(800000 / (1 - P.retencionHonorarios.valor)), 943953);
+
+  // Créditos
+  prueba('Cuota de $5.000.000 a 36 meses al 1,5% mensual = $180.762', () => Math.round(w.cuotaFrancesa(5000000, 0.015, 36)), 180762);
+  prueba('Cuota sin interés = monto ÷ plazo', () => w.cuotaFrancesa(1200000, 0, 12), 100000);
+  prueba('Sin costos, la CAE es la tasa compuesta: 1,5% mensual → 19,56%', () =>
+    Math.round(w.caeAnualDe(1500000, w.cuotaFrancesa(1500000, 0.015, 24), 24) * 10000) / 100, 19.56);
+  prueba('Con $45.000 de costos iniciales y $4.500 mensuales, la CAE sube a 31,06%', () =>
+    Math.round(w.caeAnualDe(1455000, w.cuotaFrancesa(1500000, 0.015, 24) + 4500, 24) * 10000) / 100, 31.06);
+  prueba('TMC en pesos hasta 50 UF: 41,06% (lineal)', () => w.tmcPara(30).anual, 0.4106);
+  prueba('TMC en pesos entre 50 y 200 UF: 34,06%', () => w.tmcPara(120).anual, 0.3406);
+  prueba('TMC en UF (reajustable): 6,51% compuesta', () => w.tmcPara(30, 'UF').anual, 0.0651);
+  prueba('TMC en dólares: 15,39% compuesta', () => w.tmcPara(30, 'USD').anual, 0.1539);
+
+  // Liquidación de sueldo
+  const UTM = w.eval('indUTM');
+  prueba('Sueldo bruto $1.000.000 (AFP 0,58%, Fonasa) → líquido $818.200', () => Math.round(w.calcularLiquidacion(1000000, 0.0058, 0.07).liquido), 818200);
+  prueba('Sueldo bruto $2.000.000: impuesto único del tramo 4% con la comisión AFP rebajada', () =>
+    Math.round(w.calcularLiquidacion(2000000, 0.0058, 0.07).impuesto), Math.round(1636400 * 0.04 - 0.54 * UTM));
+  prueba('Una isapre de 10% solo rebaja el 7% legal de la base del impuesto', () =>
+    Math.round(w.calcularLiquidacion(2000000, 0.0058, 0.10).baseTributable), 1636400);
+
+  // Importaciones
+  prueba('Compra personal de USD 100 + USD 25 de envío: solo IVA ($148.750 con dólar a $1.000)', () => Math.round(w.costoImportacion(100, 25, 1000, false).total), 148750);
+  prueba('La misma compra para vender: arancel 6% más IVA ($157.675)', () => Math.round(w.costoImportacion(100, 25, 1000, true).total), 157675);
+  prueba('Compra personal sobre USD 500: paga arancel', () => w.costoImportacion(600, 25, 1000, false).arancel > 0, true);
+
+  // Score 2.0
+  const ideal = w.calcularScoreDe(1000000, 700000, 0, { cuotas: 0, fondo: 2100000, planTotal: 4, planCumplido: 4 });
+  prueba('Score ideal (ahorro 30%, sin deuda, 3 meses de fondo, plan cumplido) = 1000', () => ideal.score, 1000);
+  const sinFondo = w.calcularScoreDe(1000000, 700000, 0, { cuotas: 0, fondo: 0, planTotal: 4, planCumplido: 4 });
+  prueba('Sin fondo de emergencia se pierden los 200 puntos del colchón', () => sinFondo.score, 800);
+  const endeudado = w.calcularScoreDe(850000, 605000, 1200000, { cuotas: 340000, deudaCara: true, fondo: 0, planTotal: 2, planCumplido: 1 });
+  prueba('Con cuotas del 40% del ingreso y deuda cara, carga y deuda cara dan 0', () =>
+    endeudado.indicadores.find(i => i.id === 'carga').pts + endeudado.indicadores.find(i => i.id === 'deudaCara').pts, 0);
+  prueba('Ese perfil endeudado no llega a "Buen Perfil"', () => endeudado.score < 650, true);
+  prueba('La próxima acción apunta al indicador con más puntos por ganar', () => endeudado.proxima.id, 'carga');
+  const deficit = w.calcularScoreDe(500000, 650000, 0, { cuotas: 0 });
+  prueba('Con déficit la tasa de ahorro da 0 puntos', () => deficit.indicadores[0].pts, 0);
+
+  // Cartola
+  prueba('Monto chileno con puntos de miles', () => w.leerNumeroCL('1.234.567'), 1234567);
+  prueba('Monto negativo con signo', () => w.leerNumeroCL('-12.990'), -12990);
+  prueba('Monto con decimales con coma', () => w.leerNumeroCL('1.234,50'), 1234.5);
+  prueba('Monto con signo peso', () => w.leerNumeroCL('$ 45.000'), 45000);
+  prueba('Fecha dd/mm/aaaa', () => w.leerFecha('03/10/2026'), '2026-10-03');
+  prueba('Fecha dd-mm-aa', () => w.leerFecha('3-10-26'), '2026-10-03');
+  prueba('Fecha aaaa-mm-dd', () => w.leerFecha('2026-10-03'), '2026-10-03');
+  prueba('Fecha imposible (31/09) se rechaza', () => w.leerFecha('31/09/2026'), null);
+  prueba('29 de febrero de un año bisiesto se acepta', () => w.leerFecha('29/02/2028'), '2028-02-29');
+  prueba('METROGAS es un servicio, no Transporte', () => w.categoriaPara('PAGO METROGAS'), 3);
+  prueba('FARMACIA TAGLE es salud, no Transporte (no calza con TAG)', () => w.categoriaPara('FARMACIA TAGLE'), 5);
+  prueba('METRO sí es transporte', () => w.categoriaPara('METRO LINEA 1'), 2);
+  prueba('CSV con comillas y separador ;', () => w.partirCSV('03/10/2026;"COMPRA ""LIDER"";SANTIAGO";23.450', ';').join('|'), '03/10/2026|COMPRA "LIDER";SANTIAGO|23.450');
+  prueba('Uber Eats es comida, no transporte', () => w.categoriaPara('COMPRA UBER EATS SANTIAGO'), 1);
+  prueba('Uber es transporte', () => w.categoriaPara('UBER *TRIP'), 2);
+  prueba('Netflix es entretención', () => w.categoriaPara('PAGO NETFLIX.COM'), 4);
+  prueba('Se quita el prefijo "COMPRA" de la glosa', () => w.limpiarGlosa('COMPRA LIDER EXPRESS'), 'LIDER EXPRESS');
+}
+
+function igual(a, b, tol) {
+  if (typeof a === 'number' && typeof b === 'number') return Math.abs(a - b) <= tol;
+  return a === b;
+}
+
+// La app escribe en localStorage al cargar (el mismo del sitio). Se guarda
+// una copia antes y se restaura al final, para no tocar los datos reales.
+const respaldo = {};
+Object.keys(localStorage).filter(k => k.startsWith('sf_')).forEach(k => { respaldo[k] = localStorage.getItem(k); });
+function restaurarDatos() {
+  Object.keys(localStorage).filter(k => k.startsWith('sf_')).forEach(k => { if (!(k in respaldo)) localStorage.removeItem(k); });
+  Object.entries(respaldo).forEach(([k, v]) => localStorage.setItem(k, v));
+}
+const marco = document.createElement('iframe');
+marco.id = 'app'; marco.title = 'App bajo prueba'; marco.src = '../index.html#/acerca';
+document.body.appendChild(marco);
+
+marco.addEventListener('load', () => {
+  const w = marco.contentWindow;
+  // Esperar a que la app termine de iniciar
+  setTimeout(() => {
+    try { definirCasos(w); } catch (e) {
+      document.getElementById('resumen').textContent = 'No se pudo cargar la app: ' + e.message;
+      document.getElementById('resumen').className = 'fallo';
+      restaurarDatos();
+      return;
+    }
+    let ok = 0;
+    const lista = document.getElementById('lista');
+    casos.forEach(c => {
+      let obtenido, bien;
+      try { obtenido = c.fn(); bien = igual(obtenido, c.esperado, c.tolerancia); }
+      catch (e) { obtenido = 'error: ' + e.message; bien = false; }
+      if (bien) ok++;
+      const li = document.createElement('li');
+      li.className = bien ? 'ok' : 'fallo';
+      li.textContent = (bien ? '✓ ' : '✗ ') + c.nombre + (bien ? '' : ` — se obtuvo ${JSON.stringify(obtenido)}, se esperaba ${JSON.stringify(c.esperado)}`);
+      lista.appendChild(li);
+    });
+    const r = document.getElementById('resumen');
+    r.textContent = `${ok} de ${casos.length} pruebas correctas`;
+    r.className = ok === casos.length ? 'ok' : 'fallo';
+    document.title = (ok === casos.length ? 'OK' : 'FALLA') + ' · Pruebas';
+    marco.remove();
+    restaurarDatos();
+  }, 800);
+});
+</script>
+</body>
+</html>
